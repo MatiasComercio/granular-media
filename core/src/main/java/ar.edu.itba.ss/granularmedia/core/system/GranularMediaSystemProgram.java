@@ -18,26 +18,42 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
+<<<<<<< HEAD
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.COULD_NOT_OPEN_OUTPUT_FILE;
+=======
+>>>>>>> 277d289... Added - our changes
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.VALIDATION_FAILED;
 
 public class GranularMediaSystemProgram implements MainProgram {
   private static final Logger LOGGER = LoggerFactory.getLogger(GranularMediaSystemProgram.class);
 
   // system constants
+<<<<<<< HEAD
   private static final int N_PARTICLES = 100;
   private static final double LENGTH = 5;
   private static final double WIDTH = 3;
   private static final double DIAMETER_OPENING = 2.99;
+=======
+  private static final int N_PARTICLES = 1;
+  private static final double LENGTH = 15;
+  private static final double WIDTH = 10;
+  private static final double DIAMETER_OPENING = 5;
+>>>>>>> 277d289... Added - our changes
   private static final double MASS = 0.01;
   private static final double KN = 10e5;
   private static final double KT = 2 * KN;
   private static final double MIN_DIAMETER = DIAMETER_OPENING /7;
   private static final double MAX_DIAMETER = DIAMETER_OPENING /5;
+<<<<<<< HEAD
   private static final double SIMULATION_TIME = 3;
   private static final double DEFAULT_DELTA_1 = .1 * Math.sqrt(MASS/KN);
   private static final double DELTA_1 = 1e-6;
   private static final double DELTA_2 = 0.001;
+=======
+  private static final double SIMULATION_TIME = 50;
+  private static final int PRINT_STEP_GAP = 1000;
+
+>>>>>>> 277d289... Added - our changes
   // condition constants
   private static final boolean OVERLAP_ALLOWED = false;
   private static final int MAX_OVERLAP_TRIES = 100;
@@ -49,25 +65,45 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final String OVITO_FILE_EXTENSION = ".xyz";
   private static final String DEFAULT_OUTPUT_FOLDER = "output";
   private static final String DEFAULT_OVITO_FILE_NAME = "ovito";
+<<<<<<< HEAD
   private static final double MS_TO_S = 1/1000.0;
   private static final double DELTA_LOG = 0.5;
+=======
+>>>>>>> 277d289... Added - our changes
 
   @Override
   public void run(final String[] args) {
     // system's particles
     final Collection<Particle> systemParticles = initializeSystemParticles();
 
+<<<<<<< HEAD
     // system's walls
     final Collection<Wall> systemWalls = initializeSystemWalls(LENGTH, WIDTH, 0); // +++xmagicnumber
 
     final TimeDrivenSimulationSystem granularMediaSystem =
             new GearGranularMediaSystem(systemParticles, systemWalls, KN, KT, LENGTH, WIDTH);
+=======
+    // +++xdebug
+    final Collection<Particle> updatedParticles =
+            systemParticles.stream().map(particle -> particle.withVx(0.0001)).collect(Collectors.toCollection(HashSet::new));
+
+
+    // system's walls
+    final Collection<Wall> systemWalls = initializeSystemWalls(LENGTH, WIDTH, 0); // +++xmagicnumber
+
+    // system's simulation
+//    final TimeDrivenSimulationSystem granularMediaSystem =
+//            new GearGranularMediaSystem(updatedParticles, systemWalls, KN, KT); // +++xdebug
+    final TimeDrivenSimulationSystem granularMediaSystem =
+            new GearGranularMediaSystem(systemParticles, systemWalls, KN, KT);
+>>>>>>> 277d289... Added - our changes
 
     // static data
     final StaticData staticData =
             StaticData.builder(N_PARTICLES, WIDTH, LENGTH, 0, SIMULATION_TIME).build(); // +++xmagicnumber
 
     // helper to write ovito file
+<<<<<<< HEAD
     final OutputSerializerHelper outputSerializerHelper = new OutputSerializerHelper(staticData);
 
     // default delta time
@@ -77,11 +113,24 @@ public class GranularMediaSystemProgram implements MainProgram {
     // simulation itself
     LOGGER.info("Starting simulation...");
     startSimulation(granularMediaSystem, dt, staticData.simulationTime(), DELTA_2, outputSerializerHelper);
+=======
+    final OutputSerializerHelper outputSerializerHelper =
+            new OutputSerializerHelper(staticData);
+
+    // default delta time
+    final double dt = .1 * Math.sqrt(MASS/KN);
+    LOGGER.info("dt: {}s", dt);
+
+    // simulation itself
+    LOGGER.info("Starting simulation...");
+    startSimulation(granularMediaSystem, dt, staticData.simulationTime(), PRINT_STEP_GAP, outputSerializerHelper);
+>>>>>>> 277d289... Added - our changes
     LOGGER.info("[FINISHED]");
   }
 
   // private
   private void startSimulation(final TimeDrivenSimulationSystem granularMediaSystem,
+<<<<<<< HEAD
                                final double dt, final double simulationTime, final double delta2,
                                final OutputSerializerHelper outputSerializerHelper) {
     final Path pathToOvitoFile = createOvito(DEFAULT_OUTPUT_FOLDER, DEFAULT_OVITO_FILE_NAME);
@@ -101,6 +150,21 @@ public class GranularMediaSystemProgram implements MainProgram {
           LOGGER.debug("Current time: {} ; Simulation Time: {} ; Step: {}", currentTime, simulationTime, step);
           logStep ++;
         }
+=======
+                               final double dt, final double simulationTime, final int printStepGap,
+                               final OutputSerializerHelper outputSerializerHelper) {
+    final Path pathToOvitoFile = createOvito(DEFAULT_OUTPUT_FOLDER, DEFAULT_OVITO_FILE_NAME);
+
+    long step = 0;
+    double currentTime = 0;
+    while (currentTime < simulationTime) {
+      LOGGER.info("Current time: {} ; Simulation Time: {} ; Step: {}", currentTime, simulationTime, step);
+      // print system after printStepGap dt units
+      if (step % printStepGap == 0) {
+        appendToOvito(pathToOvitoFile,
+                granularMediaSystem.getSystemData().particles(),
+                step, outputSerializerHelper);
+>>>>>>> 277d289... Added - our changes
       }
 
       // evolve system
@@ -108,6 +172,7 @@ public class GranularMediaSystemProgram implements MainProgram {
 
       // advance time and count the current step
       currentTime += dt;
+<<<<<<< HEAD
     }
 
     IOService.closeOutputFile(pathToOvitoFile);
@@ -115,6 +180,10 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double endTime = System.currentTimeMillis();
     final double simulationDuration = endTime - startTime;
     LOGGER.info("Total simulation time: {} s", simulationDuration * MS_TO_S);
+=======
+      step ++;
+    }
+>>>>>>> 277d289... Added - our changes
   }
 
   private Collection<Particle> initializeSystemParticles() {
@@ -181,12 +250,16 @@ public class GranularMediaSystemProgram implements MainProgram {
   private Path createOvito(final String defaultOutputFolder,
                            final String defaultOvitoFileName) {
     final String ovitoFile = defaultOvitoFileName + OVITO_FILE_EXTENSION;
+<<<<<<< HEAD
     final Path pathToOvitoFile = IOService.createFile(defaultOutputFolder, ovitoFile);
     if (!IOService.openOutputFile(pathToOvitoFile, true)) {
       IOService.exit(COULD_NOT_OPEN_OUTPUT_FILE, pathToOvitoFile);
     }
     // only reach here if could open file
     return pathToOvitoFile;
+=======
+    return IOService.createFile(defaultOutputFolder, ovitoFile);
+>>>>>>> 277d289... Added - our changes
   }
 
   private void appendToOvito(final Path ovitoFilePath,

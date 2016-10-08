@@ -48,7 +48,11 @@ public abstract class Space2DMaths {
     final double distance = normalProjectionModule - p.radio();
     final double superposition = - distance;
     if (    distance <= 0
+<<<<<<< HEAD
             && dotProduct(c1Particle, w.asVector().toVersor()) > 0
+=======
+            && dotProduct(c1Particle, tangentialVersor) > 0
+>>>>>>> 277d289... Added - our changes
             && tangentialProjectionModule < w.asVector().norm2()) {
       // collision detected => superposition value is representative of the collision
       return superposition;
@@ -69,8 +73,11 @@ public abstract class Space2DMaths {
     final Vector2D leftNormalVersor = w.leftNormalVersor();
     final Vector2D rightNormalVersor = w.rightNormalVersor();
     final Vector2D r0 = p.r0();
+<<<<<<< HEAD
     final Vector2D c1 = w.c1();
     final Vector2D c1r0 = r0.sub(c1);
+=======
+>>>>>>> 277d289... Added - our changes
 
     /*
         The corresponding normal versor for this particle is the one pointing from the particle to the wall.
@@ -80,7 +87,11 @@ public abstract class Space2DMaths {
         If rightNormalVersor should happen to be the correct, the tangential versor just obtain already satisfies
         the right hand rule.
      */
+<<<<<<< HEAD
     if (dotProduct(c1r0, leftNormalVersor) < 0) { // should choose left normal versor
+=======
+    if (dotProduct(r0, leftNormalVersor) < 0) { // should choose left normal versor
+>>>>>>> 277d289... Added - our changes
       return new Vector2D[] { leftNormalVersor, tangentialVersor.times(-1) };
     }
     // should choose right normal versor

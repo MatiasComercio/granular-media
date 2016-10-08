@@ -34,12 +34,19 @@ public class BruteForceMethodImplTest {
         points.add(p5);
 
         final double L = 6d;
+<<<<<<< HEAD
         final double W = 6d;
+=======
+>>>>>>> 277d289... Added - our changes
         final int M = 2;
         final double rc = 1.5;
         final boolean periodicLimit = false;
 
+<<<<<<< HEAD
         final Map<Particle, Collection<Particle>> processedPoints = bruteForceMethod.run(points, L, W, M, M, rc, periodicLimit);
+=======
+        final Map<Particle, Collection<Particle>> processedPoints = bruteForceMethod.run(points, L, M, rc, periodicLimit);
+>>>>>>> 277d289... Added - our changes
 
         final Map<Particle, Collection<Particle>> expectedProcessedPoints = new HashMap<>();
 

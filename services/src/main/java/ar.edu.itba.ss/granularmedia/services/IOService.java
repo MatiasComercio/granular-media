@@ -49,10 +49,14 @@ public class IOService {
             "[FAIL] - Both particles of the system are at the same position.\n" +
                     "Particle a: {};\n" +
                     "Particle b: {} ",
+<<<<<<< HEAD
             "[FAIL] - Both particles of the system are at the same position." + ABORTING),
     COULD_NOT_OPEN_OUTPUT_FILE(-13,
             "[FAIL] - Could not write output file: {}",
             "[FAIL] - Could not write an output file." + ABORTING);
+=======
+            "[FAIL] - Both particles of the system are at the same position." + ABORTING);
+>>>>>>> 277d289... Added - our changes
 
     private final int code;
     private final String loggerMsg;

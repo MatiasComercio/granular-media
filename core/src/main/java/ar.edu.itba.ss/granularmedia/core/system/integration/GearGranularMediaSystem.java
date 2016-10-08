@@ -12,7 +12,10 @@ import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
 import ar.edu.itba.ss.granularmedia.services.gear.Gear5SystemData;
 import ar.edu.itba.ss.granularmedia.services.gear.GearPredictorCorrector;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.BruteForceMethodImpl;
+<<<<<<< HEAD
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.CellIndexMethodImpl;
+=======
+>>>>>>> 277d289... Added - our changes
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,14 +30,22 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
   public GearGranularMediaSystem(final Collection<Particle> systemParticles,
                                  final Collection<Wall> systemWalls,
+<<<<<<< HEAD
                                  final double kn, final double kt, final double L, final double W) {
+=======
+                                 final double kn, final double kt) {
+>>>>>>> 277d289... Added - our changes
     final Collection<Particle> updatedSystemParticles = new HashSet<>(systemParticles.size());
     systemParticles.forEach(particle -> {
       final Particle updatedParticle = particle.withForceY(-particle.mass() * G);
       updatedSystemParticles.add(updatedParticle);
     });
 
+<<<<<<< HEAD
     this.systemData = new Gear5GranularMediaSystemData(updatedSystemParticles, systemWalls, kn, kt, L, W);
+=======
+    this.systemData = new Gear5GranularMediaSystemData(updatedSystemParticles, systemWalls, kn, kt);
+>>>>>>> 277d289... Added - our changes
     this.integrationMethod = new GearPredictorCorrector<>();
   }
 
@@ -59,10 +70,13 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
     private final double kn;
     private final double kt;
+<<<<<<< HEAD
     private final double L;
     private final double W;
     private final double maxRadius;
 
+=======
+>>>>>>> 277d289... Added - our changes
     private final Collection<Wall> walls;
     private final NeighboursFinder neighboursFinder;
 
@@ -70,6 +84,7 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
     private Gear5GranularMediaSystemData(final Collection<Particle> particles,
                                          final Collection<Wall> walls,
+<<<<<<< HEAD
                                          final double kn, final double kt,  final double L, final double W) {
       super(particles);
       this.kn = kn;
@@ -94,6 +109,18 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
       return maxRadius;
     }
 
+=======
+                                         final double kn, final double kt) {
+      super(particles);
+      this.kn = kn;
+      this.kt = kt;
+      this.walls = walls;
+      this.neighboursFinder = new BruteForceMethodImpl();
+      this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
+      init();
+    }
+
+>>>>>>> 277d289... Added - our changes
     @Override
     protected Map<Integer, Vector2D> setInitialDerivativeValues(final Particle particle) {
       // it is considered that there is no interaction between any pair of particles
@@ -119,6 +146,7 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     @Override
     protected void preEvaluate() {
       // calculate neighbours with the system's particles updated with the predicted values
+<<<<<<< HEAD
       int M1, M2;
       final double condition1 = L / (RC + 2 * maxRadius); // M1 condition for cell index
       final double condition2 = W / (RC + 2 * maxRadius); // M2 condition for cell index
@@ -140,6 +168,10 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
       this.currentNeighbours = neighboursFinder.run(particles(), L, W, M1, M2, RC, PERIODIC_LIMIT); // +++xmagicnumber: M and L FIXME
       super.preEvaluate();
 
+=======
+      this.currentNeighbours = neighboursFinder.run(particles(), 0, 0, RC, PERIODIC_LIMIT); // +++xmagicnumber: M and L FIXME
+      super.preEvaluate();
+>>>>>>> 277d289... Added - our changes
     }
 
     @Override
@@ -183,7 +215,11 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
       final Vector2D particlePredictedVelocity = getPredictedR(particle, VELOCITY_DERIVED_ORDER);
       final Vector2D neighbourPredictedVelocity = getPredictedR(neighbour, VELOCITY_DERIVED_ORDER);
+<<<<<<< HEAD
       final Vector2D relativeVelocity = Space2DMaths.relativeVector(neighbourPredictedVelocity, particlePredictedVelocity);
+=======
+      final Vector2D relativeVelocity = Space2DMaths.relativeVector(particlePredictedVelocity, neighbourPredictedVelocity);
+>>>>>>> 277d289... Added - our changes
 
       final Vector2D normalNeighbourForce = normalForce(superposition, normalVersor);
       final Vector2D tangentialNeighbourForce =
