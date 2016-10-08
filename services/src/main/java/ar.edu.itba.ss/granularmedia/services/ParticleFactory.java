@@ -148,7 +148,7 @@ class ParticleFactory {
    * @return a value between the min (inclusive) and the max (exclusive) value
    */
   private double randomDouble(final double min, final double max) {
-    return min + random.nextDouble() * max;
+    return min + random.nextDouble() * (max-min);
   }
 
 
