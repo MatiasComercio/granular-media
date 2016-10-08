@@ -1,6 +1,8 @@
-package ar.edu.itba.ss.granularmedia.services;
+package ar.edu.itba.ss.granularmedia.services.factories;
 
 import ar.edu.itba.ss.granularmedia.models.Particle;
+import ar.edu.itba.ss.granularmedia.services.RandomService;
+import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -35,7 +37,7 @@ public class ParticleFactory {
    * @param leftBottomParticle the particle at that corner of the area to where the particles must belong ; null if random
    * @param rightTopParticle the particle at that corner of the area to where the particles must belong ; null if random
    * @param radios the particle's radios
-   *
+   * @param mass the particle's mass
    * @param overlapAllowed whether the particles can collide or not
    * @param maxTries how many times the function will try to generate non-colliding particles - consecutively.
    *                 If this limit is reached, the set as is at that moment is returned
@@ -45,6 +47,7 @@ public class ParticleFactory {
   public Set<Particle> randomPoints(final Particle leftBottomParticle,
                              final Particle rightTopParticle,
                              final double[] radios,
+                             final double mass,
                              final boolean overlapAllowed,
                              final int maxTries) {
     final double minX, minY, maxX, maxY;
@@ -78,10 +81,10 @@ public class ParticleFactory {
       currMaxY = maxY - radio;
 
       if (overlapAllowed) {
-        currentParticle = createOverlappedParticle(currMinX, currMaxX, currMinY, currMaxY, radio);
+        currentParticle = createOverlappedParticle(currMinX, currMaxX, currMinY, currMaxY, radio, mass);
       } else {
         currentParticle = createNonOverlappedParticle(
-                currMinX, currMaxX, currMinY, currMaxY, radio, generatedParticles, maxTries);
+                currMinX, currMaxX, currMinY, currMaxY, radio, mass, generatedParticles, maxTries);
         if (currentParticle == null) { // could not generate a new particle that does not overlap
           return generatedParticles;
         }
@@ -101,12 +104,13 @@ public class ParticleFactory {
    * @param minY min y position the particle can have
    * @param maxY max y position the particle can have
    * @param radio particle's radio
+   * @param mass particle's mass
    * @return the new particle
    */
   private Particle createOverlappedParticle(final double minX, final double maxX,
                                             final double minY, final double maxY,
-                                            final double radio) {
-    return createParticle(minX, maxX, minY, maxY, radio);
+                                            final double radio, final double mass) {
+    return createParticle(minX, maxX, minY, maxY, radio, mass);
   }
 
   /**
@@ -121,6 +125,7 @@ public class ParticleFactory {
    * @param minY min y position the particle can have
    * @param maxY max y position the particle can have
    * @param radio particle's radio
+   * @param mass particle's mass
    * @param generatedParticles all the previous generated particles
    * @param maxTries how many times it will try to create a new non-overlapping particle
    * @return the created particle if it does not overlap with any of the previous generated ones and
@@ -128,13 +133,13 @@ public class ParticleFactory {
    */
   private Particle createNonOverlappedParticle(final double minX, final double maxX,
                                                final double minY, final double maxY,
-                                               final double radio,
+                                               final double radio, final double mass,
                                                final Set<Particle> generatedParticles,
                                                final int maxTries) {
     int tries = 0;
     Particle createdParticle;
     do {
-      createdParticle = createParticle(minX, maxX, minY, maxY, radio);
+      createdParticle = createParticle(minX, maxX, minY, maxY, radio, mass);
 
       tries++;
       if (tries > maxTries) {
@@ -152,16 +157,17 @@ public class ParticleFactory {
    * @param minY min y
    * @param maxY max y
    * @param radio radio
+   * @param mass particle's mass
    * @return the new particle created with the specified criteria & parameters
    */
   private Particle createParticle(final double minX, final double maxX,
                                 final double minY, final double maxY,
-                                final double radio) {
+                                final double radio, final double mass) {
     double pX = RandomService.randomDouble(minX, maxX);
     double pY = RandomService.randomDouble(minY, maxY);
     double pR = radio <= -1 ? 0 : radio;
 
-    return Particle.builder(pX, pY).radio(pR).build();
+    return Particle.builder(pX, pY).radio(pR).mass(mass).build();
   }
 
   /**

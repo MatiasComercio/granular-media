@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.*;
 
@@ -19,6 +21,8 @@ public class IOService {
   private static final String CHECK_LOGS = "\nCheck logs for more info.";
   private static final String ABORTING = CHECK_LOGS + "\nAborting...\n";
   private static final String NO_DETAIL = "[NO DETAIL GIVEN]";
+
+  private static final Map<Path, BufferedWriter> outputFiles = new HashMap<>();
 
   // Exit Codes
   public enum ExitStatus {
@@ -40,7 +44,15 @@ public class IOService {
             "[FAIL] - Could not delete an existing file." + ABORTING),
     WRITE_FILE_ERROR(-11,
             "[FAIL] - An unexpected IO Exception occurred while writing the file. Caused by: ",
-            "[FAIL] -  An unexpected IO Exception occurred while writing a file." + CHECK_LOGS);
+            "[FAIL] -  An unexpected IO Exception occurred while writing a file." + CHECK_LOGS),
+    PARTICLES_AT_SAME_POSITION(-12,
+            "[FAIL] - Both particles of the system are at the same position.\n" +
+                    "Particle a: {};\n" +
+                    "Particle b: {} ",
+            "[FAIL] - Both particles of the system are at the same position." + ABORTING),
+    COULD_NOT_OPEN_OUTPUT_FILE(-13,
+            "[FAIL] - Could not write output file: {}",
+            "[FAIL] - Could not write an output file." + ABORTING);
 
     private final int code;
     private final String loggerMsg;
@@ -141,6 +153,41 @@ public class IOService {
     System.exit(exitStatus.getCode());
   }
 
+  /**
+   * Opens the given {@code pathToFile} file with the given {@code append} mode.
+   *
+   * @param pathToFile path to the file to be opened for writing
+   * @param append mode of write - true for append ; false otherwise
+   * @return true if the file could be successfully opened ; false otherwise
+   */
+  public static boolean openOutputFile(final Path pathToFile, final boolean append) {
+    try {
+      final BufferedWriter writer = new BufferedWriter(new FileWriter(pathToFile.toFile(), append));
+
+      // if here, there was no exception
+      outputFiles.put(pathToFile, writer);
+
+      return true; // file opened
+    } catch (final IOException e) {
+      return false; // file not opened
+    }
+  }
+
+  /**
+   * given {@code pathToFile} file
+   * @param pathToFile path to the output file to be closed
+   */
+  public static void closeOutputFile(final Path pathToFile) {
+    final BufferedWriter writer = outputFiles.remove(pathToFile);
+    try {
+      // close the writer regardless of what happens...
+      if (writer != null) {
+        writer.close();
+      }
+    } catch (Exception ignored) {
+    }
+}
+
   // private methods
 
   private static void writeFailMessages(final ExitStatus exitStatus, final Object reason) {
@@ -172,23 +219,13 @@ public class IOService {
    * @return true if data could be written; false otherwise
    */
   private static boolean writeFile(final Path pathToFile, final String data, final boolean append) {
-    BufferedWriter writer = null;
+    final BufferedWriter writer = outputFiles.get(pathToFile);
     try {
-      writer = new BufferedWriter(new FileWriter(pathToFile.toFile(), append));
       writer.write(data);
       return true;
     } catch (IOException e) {
       writeFailMessages(WRITE_FILE_ERROR, e);
       return false;
-    } finally {
-      try {
-        // close the writer regardless of what happens...
-        if (writer != null) {
-          writer.close();
-        }
-      } catch (Exception ignored) {
-
-      }
     }
   }
 }

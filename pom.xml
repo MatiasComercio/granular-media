@@ -28,7 +28,7 @@
     <org.logback.extensions.version>0.1.4</org.logback.extensions.version>
     <junit.version>4.12</junit.version>
     <mockito.version>1.10.19</mockito.version>
-    <immutables.version>2.2.10</immutables.version>
+    <immutables.version>2.3.2</immutables.version>
   </properties>
 
   <build>

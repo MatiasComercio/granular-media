@@ -1,6 +1,8 @@
 package ar.edu.itba.ss.granularmedia.services;
 
 import ar.edu.itba.ss.granularmedia.models.Particle;
+import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
+import ar.edu.itba.ss.granularmedia.services.factories.ParticleFactory;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -9,6 +11,7 @@ import java.util.Set;
 public class ParticleFactoryTest {
   private static final int N_PARTICLES = 500;
   private static final double[] radios;
+  private static final double MASS = 0.001;
   private static final double RADIO = 2;
   private static final int MAX_TRIES = 100;
   private static final int MIN_X = 0;
@@ -35,7 +38,7 @@ public class ParticleFactoryTest {
   private void wrappedTestRandomPoints() {
     final ParticleFactory pF = ParticleFactory.getInstance();
 
-    final Set<Particle> points = pF.randomPoints(leftBottomParticle, rightTopParticle, radios, false, MAX_TRIES);
+    final Set<Particle> points = pF.randomPoints(leftBottomParticle, rightTopParticle, radios, MASS, false, MAX_TRIES);
 
     for (Particle p1 : points) {
 

@@ -18,4 +18,10 @@ public abstract class StaticDataAbs {
 
   @Builder.Parameter
   public abstract double length();
+
+  @Builder.Parameter
+  public abstract double diameterOpening();
+
+  @Builder.Parameter
+  public abstract double simulationTime();
 }

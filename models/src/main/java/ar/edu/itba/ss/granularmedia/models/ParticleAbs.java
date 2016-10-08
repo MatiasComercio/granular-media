@@ -96,6 +96,40 @@ public abstract class ParticleAbs {
     return 1/2.0d * mass() * Math.pow(speed(), 2);
   }
 
+  @Value.Derived
+  @Value.Auxiliary
+  public Vector2D r0() {
+    return Vector2D.builder(x(), y()).build();
+  }
+
+  @Value.Derived
+  @Value.Auxiliary
+  public Vector2D r1() {
+    return Vector2D.builder(vx(), vy()).build();
+  }
+
+  @Value.Derived
+  @Value.Auxiliary
+  public Vector2D r2() {
+    if (Double.valueOf(0).equals(mass())) {
+      return Vector2D.builder(0, 0).build();
+    }
+    return Vector2D.builder(forceX()/mass(), forceY()/mass()).build();
+  }
+
+
+  public Particle update(final Vector2DAbs uP, final Vector2DAbs uV, final Vector2DAbs uF) {
+    return Particle.builder(uP.x(), uP.y())
+            .vx(uV.x()).vy(uV.y())
+            .forceX(uF.x()).forceY(uF.y())
+            .id(id())
+            .type(type())
+            .isColliding(isColliding())
+            .mass(mass())
+            .radio(radio())
+            .build();
+  }
+
   /**
    * Prints the immutable value {@code Particle} with attribute values.
    * @return A string representation of the value
