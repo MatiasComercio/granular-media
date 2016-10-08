@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import static ar.edu.itba.ss.granularmedia.models.ParticleType.BORDER;
-import static ar.edu.itba.ss.granularmedia.models.ParticleType.COMMON;
 
 public class OutputSerializerHelper {
   private static final String NL = System.lineSeparator();
@@ -20,6 +19,30 @@ public class OutputSerializerHelper {
 
   public OutputSerializerHelper(final StaticData staticData) {
     ovitoBorderParticles = generateOvitoBorderParticles(staticData.width(), staticData.length());
+  }
+
+  /**
+   * Prepares output for Ovito file serializing all the needed information
+   * (system particles, border particles, static data, number of iteration, etc.)
+   * according to the given params, for the given iteration
+   *
+   * @param particles system particles
+   * @param iteration number of current iteration
+   * @return a serialized set of data to save at the ovito's file for the given iteration
+   */
+  public String ovitoOutput(final Collection<Particle> particles, long iteration) {
+    final StringBuilder sb = new StringBuilder();
+    final int N = particles.size() + ovitoBorderParticles.size();
+
+    // (system + border) particles number
+    sb.append(N).append(NL);
+    // iterations' number
+    sb.append(iteration).append(NL);
+    // system's particles' data
+    serializeParticles(particles, sb);
+    // ovito's border particles
+    serializeParticles(ovitoBorderParticles, sb);
+    return sb.toString();
   }
 
   private Collection<Particle> generateOvitoBorderParticles(final double width, final double length) {
@@ -36,22 +59,6 @@ public class OutputSerializerHelper {
 
     return particles;
   }
-
-  public String ovitoOutput(final Collection<Particle> particles, long iteration) {
-    final StringBuilder sb = new StringBuilder();
-    final int N = particles.size() + ovitoBorderParticles.size();
-
-    // (system + border) particles number
-    sb.append(N).append(NL);
-    // iterations' number
-    sb.append(iteration).append(NL);
-    // system's particles' data
-    serializeParticles(particles, sb);
-    // ovito's border particles
-    serializeParticles(ovitoBorderParticles, sb);
-    return sb.toString();
-  }
-
 
   private StringBuilder serializeParticles(final Iterable<Particle> particles,
                                                   final StringBuilder sb) {

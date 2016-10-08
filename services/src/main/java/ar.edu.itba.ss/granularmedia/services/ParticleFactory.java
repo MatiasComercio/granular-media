@@ -18,6 +18,12 @@ public class ParticleFactory {
     return particleFactory;
   }
 
+  /**
+   * Creates a new particle with the given x and y position, and all default attributes
+   * @param x x position
+   * @param y y position
+   * @return the created particle
+   */
   public Particle create(final double x, final double y) {
     return Particle.builder(x, y).build();
   }
@@ -139,6 +145,15 @@ public class ParticleFactory {
     return createdParticle;
   }
 
+  /**
+   * Creates a particle within the given range of x and y values, choose randomly, and the given radio
+   * @param minX min x
+   * @param maxX max x
+   * @param minY min y
+   * @param maxY max y
+   * @param radio radio
+   * @return the new particle created with the specified criteria & parameters
+   */
   private Particle createParticle(final double minX, final double maxX,
                                 final double minY, final double maxY,
                                 final double radio) {
