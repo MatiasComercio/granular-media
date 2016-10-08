@@ -3,22 +3,23 @@ package ar.edu.itba.ss.granularmedia.services;
 import ar.edu.itba.ss.granularmedia.models.Particle;
 
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Set;
 
-class ParticleFactory {
+public class ParticleFactory {
   private static ParticleFactory particleFactory;
-  private final Random random;
 
   private ParticleFactory() {
-    random = new Random();
   }
 
-  static ParticleFactory getInstance() {
+  public static ParticleFactory getInstance() {
     if (particleFactory == null) {
       particleFactory = new ParticleFactory();
     }
     return particleFactory;
+  }
+
+  public Particle create(final double x, final double y) {
+    return Particle.builder(x, y).build();
   }
 
   /**
@@ -35,7 +36,7 @@ class ParticleFactory {
    * @return a set containing the generated particles - could have less than amount particles
    * due to having reach maxTries without being able to find an empty place where the particle does not collide
    */
-  Set<Particle> randomPoints(final Particle leftBottomParticle,
+  public Set<Particle> randomPoints(final Particle leftBottomParticle,
                              final Particle rightTopParticle,
                              final double[] radios,
                              final boolean overlapAllowed,
@@ -61,12 +62,20 @@ class ParticleFactory {
 
 
     for (final double radio : radios) {
-      Particle currentParticle;
+      final Particle currentParticle;
+
+      // adapt max and min (x,y) so that current particle does not overlaps the silo's border
+      final double currMinX, currMaxX, currMinY, currMaxY;
+      currMinX = minX + radio;
+      currMaxX = maxX - radio;
+      currMinY = minY + radio;
+      currMaxY = maxY - radio;
 
       if (overlapAllowed) {
-        currentParticle = createOverlappedParticle(minX, maxX, minY, maxY, radio);
+        currentParticle = createOverlappedParticle(currMinX, currMaxX, currMinY, currMaxY, radio);
       } else {
-        currentParticle = createNonOverlappedParticle(minX, maxX, minY, maxY, radio, generatedParticles, maxTries);
+        currentParticle = createNonOverlappedParticle(
+                currMinX, currMaxX, currMinY, currMaxY, radio, generatedParticles, maxTries);
         if (currentParticle == null) { // could not generate a new particle that does not overlap
           return generatedParticles;
         }
@@ -130,27 +139,15 @@ class ParticleFactory {
     return createdParticle;
   }
 
-
   private Particle createParticle(final double minX, final double maxX,
                                 final double minY, final double maxY,
                                 final double radio) {
-    double pX = randomDouble(minX, maxX);
-    double pY = randomDouble(minY, maxY);
+    double pX = RandomService.randomDouble(minX, maxX);
+    double pY = RandomService.randomDouble(minY, maxY);
     double pR = radio <= -1 ? 0 : radio;
 
     return Particle.builder(pX, pY).radio(pR).build();
   }
-
-  /**
-   * Gets a new pseudo-aleatory random double between the min (inclusive) and max (exclusive) values
-   * @param min the min value
-   * @param max the max value
-   * @return a value between the min (inclusive) and the max (exclusive) value
-   */
-  private double randomDouble(final double min, final double max) {
-    return min + random.nextDouble() * (max-min);
-  }
-
 
   /**
    * Checks whether the just created particles overlaps all the previous created particles

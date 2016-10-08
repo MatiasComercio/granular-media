@@ -1,5 +1,6 @@
 package ar.edu.itba.ss.granularmedia.models;
 
-enum ParticleType {
+public enum ParticleType {
   COMMON,
+  BORDER
 }
