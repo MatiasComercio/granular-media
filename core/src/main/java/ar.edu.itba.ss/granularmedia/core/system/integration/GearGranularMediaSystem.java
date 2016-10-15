@@ -11,7 +11,6 @@ import ar.edu.itba.ss.granularmedia.services.IOService;
 import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
 import ar.edu.itba.ss.granularmedia.services.gear.Gear5SystemData;
 import ar.edu.itba.ss.granularmedia.services.gear.GearPredictorCorrector;
-import ar.edu.itba.ss.granularmedia.services.neighboursfinders.BruteForceMethodImpl;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.CellIndexMethodImpl;
 
 import java.util.Collection;
@@ -62,6 +61,8 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     private final double L;
     private final double W;
     private final double maxRadius;
+    private final int M1;
+    private final int M2;
 
     private final Collection<Wall> walls;
     private final NeighboursFinder neighboursFinder;
@@ -79,19 +80,21 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
       this.walls = walls;
       this.neighboursFinder = new CellIndexMethodImpl();
       this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
-      this.maxRadius = getMaxRadius(particles);
-      init();
-    }
+      this.maxRadius = initAndGetMaxRadio();
 
-    // TODO: Along with init() this is going over all particles two times.
-    private double getMaxRadius(Collection<Particle> particles) {
-      double maxRadius = 0;
-      for(Particle particle : particles){
-        if(particle.radio() > maxRadius){
-          maxRadius = particle.radio();
-        }
+      final double condition1 = L / (RC + 2 * maxRadius); // M1 condition for cell index
+      final double condition2 = W / (RC + 2 * maxRadius); // M2 condition for cell index
+
+      if (condition1 == Math.floor(condition1)) { // In case condition1 is an "integer" value
+        this.M1 = ((int)Math.floor(condition1)) - 1; // This is done to make sure M1 is strictly lesser than condition1
+      } else {
+        this.M1 = (int) Math.floor(condition1);
       }
-      return maxRadius;
+      if (condition2 == Math.floor(condition2)) { // In case condition2 is an "integer" value
+        this.M2 = ((int)Math.floor(condition2)) - 1; // This is done to make sure M2 is strictly lesser than condition2
+      } else {
+        this.M2 = (int) Math.floor(condition2);
+      }
     }
 
     @Override
@@ -119,25 +122,7 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     @Override
     protected void preEvaluate() {
       // calculate neighbours with the system's particles updated with the predicted values
-      int M1, M2;
-      final double condition1 = L / (RC + 2 * maxRadius); // M1 condition for cell index
-      final double condition2 = W / (RC + 2 * maxRadius); // M2 condition for cell index
-
-      if(condition1 == Math.floor(condition1)){ // In case condition1 is an "integer" value
-        M1 = ((int)Math.floor(condition1)) - 1; // This is done to make sure M1 is strictly lesser than condition1
-      } else{
-        M1 = (int) Math.floor(condition1);
-      }
-      if(condition2 == Math.floor(condition2)){ // In case condition2 is an "integer" value
-        M2 = ((int)Math.floor(condition2)) - 1; // This is done to make sure M2 is strictly lesser than condition2
-      } else{
-        M2 = (int) Math.floor(condition2);
-      }
-//      OLD CONDITION
-//      final int M1 = ((int) Math.floor(L / (RC + 2 * maxRadius))) - 1; // TODO: M should be strictly < L / (RC + 2 * maxRadius)
-//      final int M2 = ((int) Math.floor(W / (RC + 2 * maxRadius))) - 1;
-
-      this.currentNeighbours = neighboursFinder.run(particles(), L, W, M1, M2, RC, PERIODIC_LIMIT); // +++xmagicnumber: M and L FIXME
+      this.currentNeighbours = neighboursFinder.run(predictedParticles(), L, W, M1, M2, RC, PERIODIC_LIMIT);
       super.preEvaluate();
 
     }
@@ -152,14 +137,26 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
       return totalParticlesForce.add(totalWallsForce).add(totalGravityForce);
     }
 
+    private double initAndGetMaxRadio() {
+      double maxRadius = 0;
+      for(final Particle particle : particles()){
+        initParticle(particle);
+        if(particle.radio() > maxRadius){
+          maxRadius = particle.radio();
+        }
+      }
+      return maxRadius;
+    }
+
     // Particle's total force
     private Vector2D totalParticlesForce(final Particle particle, final Collection<Particle> neighbours) {
       Vector2D totalParticlesForce = Space2DMaths.nullVector();
-      for (final Particle neighbour : neighbours) {
-        final Vector2D neighbourForce = neighbourForce(particle, neighbour);
-        totalParticlesForce = totalParticlesForce.add(neighbourForce);
+      if (neighbours != null) {
+        for (final Particle neighbour : neighbours) {
+          final Vector2D neighbourForce = neighbourForce(particle, neighbour);
+          totalParticlesForce = totalParticlesForce.add(neighbourForce);
+        }
       }
-
       return totalParticlesForce;
     }
 

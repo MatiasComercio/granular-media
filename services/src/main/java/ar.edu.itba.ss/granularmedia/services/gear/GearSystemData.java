@@ -5,9 +5,9 @@ import ar.edu.itba.ss.granularmedia.interfaces.SystemData;
 import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.models.Vector2D;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
+import static java.lang.Math.pow;
 
 /* package-private */ abstract class GearSystemData implements SystemData {
     /*
@@ -37,14 +37,28 @@ import java.util.Map;
    *  #particle => delta_R2_value }
    */
   private final Map<Particle, Vector2D> deltasR2;
+  private final Map<Integer, Map<Double, Double>> predictedConstants;
+  private final Map<Integer, Map<Double, Double>> fixConstants;
+  private final Map<Double, Double> evaluateConstants;
+  /* init */ {
+    predictedConstants = new HashMap<>();
+    fixConstants = new HashMap<>();
+    for (int order = 0 ; order < sVectors() ; order++) {
+      predictedConstants.put(order, new HashMap<>());
+      fixConstants.put(order, new HashMap<>());
+    }
+    evaluateConstants = new HashMap<>();
+  }
 
   /**
    * System's particles
    */
   private Collection<Particle> particles;
+  private Collection<Particle> predictedParticles;
 
   /* package-private */ GearSystemData(final Collection<Particle> particles) {
     this.particles = particles;
+    this.predictedParticles = new HashSet<>();
 
     final int nParticles = particles.size();
 
@@ -93,19 +107,18 @@ import java.util.Map;
   // default implemented methods
 
   /**
-   * Initialize the R and predictedR system values for all system's particles
+   * Initialize the R and predictedR system values for this system's particle
    * using the provided {@code setInitialDerivativeValues} method on each particle.
    *
-   * @implNote <b>Important: </b> This method should be called only once before the usage of the gear method
+   * @implNote <b>Important: </b> This method should be called only once FOR EACH PARTICLE
+   * before the usage of the gear method
    */
-  protected void init() {
+  protected void initParticle(final Particle particle) {
     // initialize maps
-    particles.forEach(particle -> {
-      // create internal predicted map
-      this.predictedRs.put(particle, new HashMap<>(sVectors()));
-      // initialize currentRs map with the first step, using the formula provided for this system
-      this.currentRs.put(particle, setInitialDerivativeValues(particle));
-    });
+    // create internal predicted map
+    this.predictedRs.put(particle, new HashMap<>(sVectors()));
+    // initialize currentRs map with the first step, using the formula provided for this system
+    this.currentRs.put(particle, setInitialDerivativeValues(particle));
   }
 
   /**
@@ -138,6 +151,14 @@ import java.util.Map;
   }
 
   /**
+   * Execute some statements just after prediction step for the given particle
+   */
+  @SuppressWarnings("WeakerAccess")
+  public void predicted(@SuppressWarnings("UnusedParameters") final Particle predictedParticle) {
+
+  }
+
+  /**
    * Execute some statements after prediction step
    */
   @SuppressWarnings("WeakerAccess")
@@ -156,7 +177,7 @@ import java.util.Map;
   /**
    * Execute some statements after evaluate step
    */
-  @SuppressWarnings("WeakerAccess")
+  @SuppressWarnings({"WeakerAccess", "unused"})
   protected void postEvaluate() {
 
   }
@@ -177,8 +198,41 @@ import java.util.Map;
 
   }
 
+  /* package-private */
+  protected Collection<Particle> predictedParticles() {
+    return this.predictedParticles;
+  }
+
   // package-private
   // access allowed from this module and gear package only, i.e., from Gear implementations only
+
+  /**
+   * Retrieves the constant for the predicted step of the specified term and the given dt
+   * @param cTerm the term whose constant is needed
+   * @param dt the dt used to calculate the constant
+   * @return the constant for the predicted step for the specified parameters
+   */
+  /* package-private */ double getPredictedConstantTerm(final int cTerm, final double dt) {
+    return predictedConstants.get(cTerm).computeIfAbsent(dt, aDouble -> pow(dt, cTerm) / factorial(cTerm));
+  }
+
+  /* package-private */ double getEvaluateConstant(final double dt) {
+    // taken from Gear Predictor Corrector theory
+    return evaluateConstants.computeIfAbsent(dt, aDouble -> pow(dt, 2)/factorial(2));
+  }
+
+  /* package-private */ double getFixConstantOrder(final int order, final double dt) {
+    return fixConstants.get(order).computeIfAbsent(dt,
+            aDouble -> alpha(order) * factorial(order) / pow(dt, order));
+  }
+
+  /* package-private */ void predictedParticles(final Collection<Particle> predictedParticles) {
+    this.predictedParticles = predictedParticles;
+  }
+
+  /* package-private */ int nParticles() {
+    return particles.size();
+  }
 
   /**
    * Sets the new predicted R value - {@code updatedR} - of order {@code derivativeOrder} of the given {@code particle}

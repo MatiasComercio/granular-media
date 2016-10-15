@@ -7,32 +7,54 @@ import ar.edu.itba.ss.granularmedia.models.Vector2D;
 import java.util.Collection;
 import java.util.HashSet;
 
-import static java.lang.Math.pow;
-
 public class GearPredictorCorrector<K extends GearSystemData> implements NumericIntegrationMethod<K> {
   @Override
-  public void evolveSystem(final GearSystemData systemData,
-                           final double dt) {
-    predict(systemData, dt);
-    evaluate(systemData, dt);
-    fix(systemData, dt);
+  public void evolveSystem(final GearSystemData systemData, final double dt) {
+    final int nParticles = systemData.nParticles();
+
+    systemData.prePredict();
+
+    final Collection<Particle> predictedSystemParticles = new HashSet<>(nParticles);
+
+    systemData.particles().forEach(cParticle -> {
+      // predict
+      predict(systemData, dt, cParticle);
+
+      // update the currently predicting values
+      final Particle cPredictedSystemParticle = predictedSystemParticle(systemData, cParticle);
+      predictedSystemParticles.add(cPredictedSystemParticle);
+
+      // inform that this particle has just been predicted
+      systemData.predicted(cPredictedSystemParticle);
+    });
+
+    // save all the new predicted values
+    systemData.predictedParticles(predictedSystemParticles);
+
+    systemData.postPredict();
+
+
+    final Collection<Particle> updatedSystemParticles = new HashSet<>(nParticles);
+
+    // fix and evaluate, all at once
+    systemData.preEvaluate();
+
+    systemData.predictedParticles().forEach(cParticle -> {
+      evaluate(systemData, dt, cParticle);
+
+      // fix cycle
+      systemData.preFix();
+      fix(systemData, dt, cParticle);
+      // update system's particle
+      updatedSystemParticles.add(updatedParticle(systemData, cParticle));
+    });
+
+    // update all system's particles
+    systemData.particles(updatedSystemParticles);
+    systemData.postFix();
   }
 
   // private methods
-
-  private void predict(final GearSystemData systemData, final double dt) {
-    systemData.prePredict();
-
-    final Collection<Particle> systemParticles = systemData.particles();
-    final Collection<Particle> predictedSystemParticles = new HashSet<>();
-    for (final Particle cSystemParticle : systemParticles) {
-      predict(systemData, dt, cSystemParticle);
-      predictedSystemParticles.add(predictedSystemParticle(systemData, cSystemParticle));
-    }
-    systemData.particles(predictedSystemParticles);
-
-    systemData.postPredict();
-  }
 
   private Particle predictedSystemParticle(final GearSystemData systemData, final Particle cSystemParticle) {
     final Vector2D uP = systemData.getPredictedR(cSystemParticle, 0);
@@ -78,7 +100,7 @@ public class GearPredictorCorrector<K extends GearSystemData> implements Numeric
         // we get the value of the derivative with the above order of the current particle
         final Vector2D cTermDerivativeValue = systemData.getR(particle, cTermDerivativeOrder);
         // we get the constant value that goes along with the current term being calculated
-        final double cTermConstantValue = pow(dt, cTerm) / systemData.factorial(cTerm);
+        final double cTermConstantValue = systemData.getPredictedConstantTerm(cTerm, dt);
         // we append this term to all the previous terms
         cUpdatedDerivativeValue = cUpdatedDerivativeValue.add(cTermDerivativeValue.times(cTermConstantValue));
         // we go on with the next term, if any
@@ -92,50 +114,23 @@ public class GearPredictorCorrector<K extends GearSystemData> implements Numeric
     }
   }
 
-  private void evaluate(final GearSystemData systemData, final double dt) {
-    systemData.preEvaluate();
-
-    final Collection<Particle> systemParticles = systemData.particles();
-    for (final Particle cSystemParticle : systemParticles) {
-      evaluate(systemData, dt, cSystemParticle);
-    }
-
-    systemData.postEvaluate();
-  }
-
   private void evaluate(final GearSystemData systemData,
                         final double dt,
                         final Particle particle) {
     final Vector2D accelerationWithPredictedVariables = systemData.getForceWithPredicted(particle).div(particle.mass());
-    // '2¡ value taken from Gear Predictor Corrector theory
+    // '2' value taken from Gear Predictor Corrector theory
     final Vector2D predictedAcceleration = systemData.getPredictedR(particle, 2);
     final Vector2D deltaAcceleration = accelerationWithPredictedVariables.sub(predictedAcceleration);
-    final double constant = pow(dt, 2)/systemData.factorial(2); // taken from Gear Predictor Corrector theory
+    final double constant = systemData.getEvaluateConstant(dt);
     final Vector2D deltaR2 = deltaAcceleration.times(constant);
     systemData.setDeltaR2(particle, deltaR2);
-  }
-
-  private void fix(final GearSystemData systemData, final double dt) {
-    systemData.preFix();
-
-    final Collection<Particle> systemParticles = systemData.particles();
-    final Collection<Particle> updatedSystemParticles = new HashSet<>(systemParticles.size());
-    for (final Particle cSystemParticle : systemParticles) {
-      fix(systemData, dt, cSystemParticle);
-      // update system's particle
-      updatedSystemParticles.add(updatedParticle(systemData, cSystemParticle));
-    }
-    // update all system's particles
-    systemData.particles(updatedSystemParticles);
-
-    systemData.postFix();
   }
 
   private void fix(final GearSystemData systemData, final double dt, final Particle particle) {
     for(int cDerivativeOrder = 0; cDerivativeOrder <= systemData.order() ; cDerivativeOrder++) {
       final Vector2D predictedR = systemData.getPredictedR(particle, cDerivativeOrder);
       final Vector2D deltaR2 = systemData.getDeltaR2(particle);
-      final double constant = systemData.alpha(cDerivativeOrder) * systemData.factorial(cDerivativeOrder) / pow(dt, cDerivativeOrder);
+      final double constant = systemData.getFixConstantOrder(cDerivativeOrder, dt);
       final Vector2D secondTerm = deltaR2.times(constant);
       final Vector2D updatedR = predictedR.add(secondTerm);
       systemData.setR(particle, cDerivativeOrder, updatedR);

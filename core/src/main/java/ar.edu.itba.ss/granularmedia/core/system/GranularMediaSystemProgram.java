@@ -8,15 +8,14 @@ import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.models.StaticData;
 import ar.edu.itba.ss.granularmedia.models.Wall;
 import ar.edu.itba.ss.granularmedia.services.IOService;
-import ar.edu.itba.ss.granularmedia.services.factories.ParticleFactory;
 import ar.edu.itba.ss.granularmedia.services.RandomService;
+import ar.edu.itba.ss.granularmedia.services.factories.ParticleFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.stream.Collectors;
 
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.COULD_NOT_OPEN_OUTPUT_FILE;
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.VALIDATION_FAILED;
@@ -34,7 +33,7 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final double KT = 2 * KN;
   private static final double MIN_DIAMETER = DIAMETER_OPENING /7;
   private static final double MAX_DIAMETER = DIAMETER_OPENING /5;
-  private static final double SIMULATION_TIME = 3;
+  private static final double SIMULATION_TIME = 1;
   private static final double DEFAULT_DELTA_1 = .1 * Math.sqrt(MASS/KN);
   private static final double DELTA_1 = 1e-6;
   private static final double DELTA_2 = 0.001;

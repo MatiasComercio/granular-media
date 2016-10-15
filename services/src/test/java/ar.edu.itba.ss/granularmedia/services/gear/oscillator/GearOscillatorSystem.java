@@ -66,7 +66,7 @@ public class GearOscillatorSystem implements TimeDrivenSimulationSystem {
       this.k = k;
       this.gamma = gamma;
 
-      init();
+      particles.forEach(this::initParticle);
     }
 
     @Override
