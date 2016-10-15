@@ -32,10 +32,10 @@ public class BruteForceMethodImpl implements NeighboursFinder {
     double distance;
 
     for (int i = 0; i < pointsAsList.size(); i++) {
-      for (int j = 0; j < pointsAsList.size(); j++) {
+      for (int j = i+1; j < pointsAsList.size(); j++) {
         distance = Space2DMaths.distanceBetween(pointsAsList.get(i),
                 pointsAsList.get(j));
-        if (distance <= rc && !pointsAsList.get(i).equals(pointsAsList.get(j))) {
+        if (distance <= rc) {
           collisionPerParticle.get(pointsAsList.get(i)).add(pointsAsList.get(j));
           collisionPerParticle.get(pointsAsList.get(j)).add(pointsAsList.get(i));
         }
