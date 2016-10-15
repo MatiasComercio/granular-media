@@ -61,7 +61,7 @@ public class GranularMediaSystemProgram implements MainProgram {
     final Collection<Wall> systemWalls = initializeSystemWalls(LENGTH, WIDTH, 0); // +++xmagicnumber
 
     final TimeDrivenSimulationSystem granularMediaSystem =
-            new GearGranularMediaSystem(systemParticles, systemWalls, KN, KT);
+            new GearGranularMediaSystem(systemParticles, systemWalls, KN, KT, LENGTH, WIDTH);
 
     // static data
     final StaticData staticData =

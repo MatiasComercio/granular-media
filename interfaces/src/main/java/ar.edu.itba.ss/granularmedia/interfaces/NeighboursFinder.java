@@ -13,25 +13,27 @@ public interface NeighboursFinder {
    * of the collection, considering that a collision is produced when two particles are at distance lower or equal than rc,
    * considering both point's radios.
    * <p>
-   * Particles are supposed to be contained on a square with sides of length L ( 0 <= point.x < L && 0 <= point.y < L ).
+   * Particles are supposed to be contained on a rectangle of height L and width W ( 0 <= point.x < W && 0 <= point.y < L ).
    * <p>
-   * The method will divide that square in cells - with sides of length L/M -, and will use this cells
+   * The method will divide that rectangle in M1xM2 cells - each of them with height L/M1 and base W/M2 -, and will use this cells
    * to apply the algorithm.
    * <p>
    *
    * @param particles collection containing the particles for the algorithm
-   * @param L length of the side of the square containing all the particles of the set. Must be positive.
-   * @param M number of cells on which the side of the square will be divided. Must be positive.
+   * @param L length of the height of the rectangle containing all the particles of the set. Must be positive.
+   * @param W length of the base of the rectangle containing all the particles of the set. Must be positive.
+   * @param M1 number of cells on which the height of the square will be divided. Must be positive.
+   * @param M2 number of cells on which the base of the square will be divided. Must be positive.
    * @param rc max distance to consider that two particles are colliding. Must be non negative.
    * @param periodicLimit if the end of a limit cell should be consider as it were from the opposite side
    * @return a map containing as key each of the particles of the set, and a list of the particles with the ones
    * each point collides
    *
-   * @throws IllegalArgumentException if M <= 0 or rc < 0 or L <= 0
+   * @throws IllegalArgumentException if M1 <= 0 or M2 <= 0 or rc < 0 or L <= 0 or W <= 0
    * @implNote take into consideration that this algorithm for work requires that
-   * the condition L/M > rc + r1 + r2 is met for every pair of particles. However, this condition is not check,
+   * the condition L/M1 > rc + r1 + r2 and W/M2 > rc + r1 + r2  and  is met for every pair of particles. However, this condition is not check,
    * so be sure that it is met so as to guaranty that the value returned by this method is valid and real
    */
   Map<Particle, Collection<Particle>> run(Collection<Particle> particles,
-                                          double L, int M, double rc, boolean periodicLimit);
+                                          double L, double W, int M1, int M2, double rc, boolean periodicLimit);
 }

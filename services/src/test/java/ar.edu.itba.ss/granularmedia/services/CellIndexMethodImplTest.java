@@ -35,11 +35,13 @@ public class CellIndexMethodImplTest {
     points.add(p5);
 
     final double L = 6d;
-    final int M = 2;
+    final double W = 6d;
+    final int M1 = 2;
+    final int M2 = 2;
     final double rc = 1.5;
     final boolean periodicLimit = false;
 
-    final Map<Particle, Collection<Particle>> processedPoints = cellIndexMethod.run(points, L, M, rc, periodicLimit);
+    final Map<Particle, Collection<Particle>> processedPoints = cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
 
     final Map<Particle, Set<Particle>> expectedProcessedPoints = new HashMap<>();
 
@@ -93,11 +95,13 @@ public class CellIndexMethodImplTest {
     points.add(p5);
 
     final double L = 6d;
-    final int M = 2;
+    final double W = 6d;
+    final int M1 = 2;
+    final int M2 = 2;
     final double rc = 1.5;
     final boolean periodicLimit = true;
 
-    final Map<Particle, Collection<Particle>> processedPoints = cellIndexMethod.run(points, L, M, rc, periodicLimit);
+    final Map<Particle, Collection<Particle>> processedPoints = cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
 
     final Map<Particle, Collection<Particle>> expectedProcessedPoints = new HashMap<>();
 
@@ -145,11 +149,13 @@ public class CellIndexMethodImplTest {
     final Particle p1 = Particle.builder(6, 6).radio(r).build(); // this point should fail when run is called  (out of bounds)
     points.add(p1);
     final double L = 6d;
-    final int M = 2;
+    final double W = 6d;
+    final int M1 = 2;
+    final int M2 = 2;
     final double rc = 1.5;
     final boolean periodicLimit = true;
 
-    cellIndexMethod.run(points, L, M, rc, periodicLimit);
+    cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
   }
 
   @Test(expected=IndexOutOfBoundsException.class)
@@ -159,11 +165,13 @@ public class CellIndexMethodImplTest {
     final Particle p1 = Particle.builder(-0.5, 5).radio(r).build(); // this point should fail when run is called  (out of bounds)
     points.add(p1);
     final double L = 6d;
-    final int M = 2;
+    final double W = 6d;
+    final int M1 = 2;
+    final int M2 = 2;
     final double rc = 1.5;
     final boolean periodicLimit = true;
 
-    cellIndexMethod.run(points, L, M, rc, periodicLimit);
+    cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
   }
 
   @Test
@@ -190,13 +198,15 @@ public class CellIndexMethodImplTest {
     points.add(p8);
 
     final double L = 6d;
-    final int M = 2;
+    final double W = 6d;
+    final int M1 = 2;
+    final int M2 = 2;
     final double rc = 1.5;
     final boolean periodicLimit = true;
 
     Map<Particle, Collection<Particle>> processedPoints;
 
-    processedPoints = cellIndexMethod.run(points, L, M, rc, periodicLimit);
+    processedPoints = cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
 
     final Map<Particle, Set<Particle>> expectedProcessedPoints = new HashMap<>();
 

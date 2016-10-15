@@ -28,15 +28,15 @@ public class CellIndexMethodImpl implements NeighboursFinder {
 
 
   @Override
-  public Map<Particle, Collection<Particle>> run(final Collection<Particle> particles, final double L, final int M, final double rc, final boolean periodicLimit) {
+  public Map<Particle, Collection<Particle>> run(final Collection<Particle> particles, final double L, final double W, final int M1, final int M2, final double rc, final boolean periodicLimit) {
     // check M conditions
 
-    if (M <= 0 || rc < 0 || L <= 0) {
-      throw new IllegalArgumentException("Check that this is happening, but must not: M <= 0 or rc < 0 or L <= 0");
+    if (M1 <= 0 || M2<=0 || rc < 0 || L <= 0 || W<=0) {
+      throw new IllegalArgumentException("Check that this is happening, but must not: M1 <= 0 or M2<= 0 or rc < 0 or L <= 0 or W<=0");
     }
 
-    // create the square cell matrix
-    final SquareMatrix cellMatrix = new SquareMatrix(M);
+    // create the cell matrix (Size: M1 x M2)
+    final CellMatrix cellMatrix = new CellMatrix(M1, M2);
 
     final Map<Particle, Collection<Particle>> collisionPerParticle = new HashMap<>(particles.size());
     final Set<Cell> nonEmptyCells = new HashSet<>();
@@ -47,17 +47,17 @@ public class CellIndexMethodImpl implements NeighboursFinder {
 
       // put each point on the corresponding cell of the cell's matrix
       // save the cell as a non empty one, to analyse it later
-      nonEmptyCells.add(saveToMatrix(L, M, point, cellMatrix));
+      nonEmptyCells.add(saveToMatrix(L, W, M1, M2, point, cellMatrix));
     }
 
     // run the cell index method itself
-    run(L, nonEmptyCells, cellMatrix, rc, periodicLimit, collisionPerParticle);
+    run(L, W, nonEmptyCells, cellMatrix, rc, periodicLimit, collisionPerParticle);
 
     // return the created map with each point information
     return collisionPerParticle;
   }
 
-  private void run(final double L, final Set<Cell> nonEmptyCells, final SquareMatrix cellMatrix, final double rc,
+  private void run(final double L, final double W, final Set<Cell> nonEmptyCells, final CellMatrix cellMatrix, final double rc,
                    final boolean periodicLimit, final Map<Particle, Collection<Particle>> collisionPerParticle) {
   /*
    Takes one cell at a time and applies the patter saw in class to take advantage of the symmetry of the
@@ -72,18 +72,19 @@ public class CellIndexMethodImpl implements NeighboursFinder {
    Periodic Limit Cases
 
    if periodic limit is false
-    if row-1 < 0 || row+1 = M || col+1 = M => do not consider that cell, with M = matrix.dimension()
+    if row-1 < 0 || row+1 = #rows || col+1 = #cols => do not consider that cell, with M = matrix.dimension()
 
    if periodic limit is true
-    if row-1 < 0 => use M-1 and particles inside this cell should be applied an y offset of -L
-    if row+1 = M => use 0 and particles inside this cell should be applied an y offset of + L
-    if col+1 = M => use 0 and particles inside this cell should be applied an x offset of + L
+    if row-1 < 0 => use #rows-1 and particles inside this cell should be applied an y offset of + L
+    if row+1 = #rows => use 0 and particles inside this cell should be applied an y offset of - L
+    if col+1 = #cols => use 0 and particles inside this cell should be applied an x offset of + W
 
-    , with M = matrix.dimension()
+    with L beign the rectangle's height and W the width
 
    */
 
-    final int M = cellMatrix.dimension();
+    final int rows = cellMatrix.rows();
+    final int cols = cellMatrix.cols();
     nonEmptyCells.forEach(cCell -> {
       boolean virtualParticleNeeded;
       double xOffset, yOffset;
@@ -104,26 +105,26 @@ public class CellIndexMethodImpl implements NeighboursFinder {
 
         // adapt to periodicLimit condition
         if (!periodicLimit) {
-          if (oRow < 0 || oRow == M || oCol == M) {
+          if (oRow < 0 || oRow == rows || oCol == cols) {
             continue; // do not consider this cell, because it does not exists
           }
         } else {
           // oRow condition
           if (oRow < 0) {
-            oRow = M - 1;
+            oRow = rows - 1;
             virtualParticleNeeded = true;
             yOffset = L;
-          } else if (oRow == M) {
+          } else if (oRow == rows) {
             oRow = 0;
             virtualParticleNeeded = true;
             yOffset = -L;
           }
 
           // oCol condition
-          if (oCol == M) {
+          if (oCol == cols) {
             oCol = 0;
             virtualParticleNeeded = true;
-            xOffset = L;
+            xOffset = W;
           }
         }
 
@@ -206,19 +207,21 @@ public class CellIndexMethodImpl implements NeighboursFinder {
 
   /**
    *
-   * @param mapSideLength -
-   * @param nCells -
+   * @param L -
+   * @param W -
+   * @param M1 -
+   * @param M2 -
    * @param point -
    * @param cellMatrix -
    * @return cell where the given point was saved at the given SquareMatrix
    */
-  private Cell saveToMatrix(final double mapSideLength, final int nCells,
-                            final Particle point, final SquareMatrix cellMatrix) {
+  private Cell saveToMatrix(final double L, final double W, final int M1, final int M2,
+                            final Particle point, final CellMatrix cellMatrix) {
   /*
     Each point has an x & y component.
     To get at which cell of the matrix the point belongs, here it is the idea of what's done.
     Consider the case of a column:
-    * check which is the number t that makes t*k <= point.x() < (t+1)*k
+    * check which is the number t that makes t*k <= point.x() < (t+1)*k (where k is the length of a cell)
     * if t is an integer, the column taken is t-1 (unless t = 0), as it would be the case that the point is
       at a cell boundary, and it can be classified in any of those.
     * if t is not an integer, the floor of t is taken as the column number
@@ -258,12 +261,13 @@ public class CellIndexMethodImpl implements NeighboursFinder {
      (see previous graphics for a better understanding).
    */
 
-    final double k = mapSideLength / nCells;
+    final double k1 = L / M1; // the height of each cell
+    final double k2 = W / M2; // the base of each cell
 
     final int row, col;
 
-    row = (nCells - 1) - getT(k, point.y());
-    col = getT(k, point.x());
+    row = (M1 - 1) - getT(k1, point.y());
+    col = getT(k2, point.x());
 
     // if row or col is out of bounds => bad input was given ( x < 0 || x >= L || y < 0 || y >= L )
     return cellMatrix.addToCell(row, col, point);
@@ -312,13 +316,18 @@ public class CellIndexMethodImpl implements NeighboursFinder {
     }
   }
 
-  private static class SquareMatrix {
+  private static class CellMatrix {
     private final Cell[][] matrix;
+    private final int rows;
+    private final int cols;
 
-    private SquareMatrix(final int dimension) {
-      this.matrix = new Cell[dimension][dimension];
-      for (int row = 0 ; row < dimension ; row ++) {
-        for (int col = 0 ; col < dimension ; col ++) {
+
+    private CellMatrix(final int rows, final int cols) {
+      this.rows = rows;
+      this.cols = cols;
+      this.matrix = new Cell[rows][cols];
+      for (int row = 0 ; row < rows ; row ++) {
+        for (int col = 0 ; col < cols ; col ++) {
           matrix[row][col] = new Cell(row, col);
         }
       }
@@ -351,9 +360,10 @@ public class CellIndexMethodImpl implements NeighboursFinder {
       return c;
     }
 
-    private int dimension() {
-      return matrix.length;
+    private int rows() {
+      return rows;
     }
+    private int cols() { return cols; }
 
   }
 }

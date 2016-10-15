@@ -12,6 +12,7 @@ import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
 import ar.edu.itba.ss.granularmedia.services.gear.Gear5SystemData;
 import ar.edu.itba.ss.granularmedia.services.gear.GearPredictorCorrector;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.BruteForceMethodImpl;
+import ar.edu.itba.ss.granularmedia.services.neighboursfinders.CellIndexMethodImpl;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,14 +27,14 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
   public GearGranularMediaSystem(final Collection<Particle> systemParticles,
                                  final Collection<Wall> systemWalls,
-                                 final double kn, final double kt) {
+                                 final double kn, final double kt, final double L, final double W) {
     final Collection<Particle> updatedSystemParticles = new HashSet<>(systemParticles.size());
     systemParticles.forEach(particle -> {
       final Particle updatedParticle = particle.withForceY(-particle.mass() * G);
       updatedSystemParticles.add(updatedParticle);
     });
 
-    this.systemData = new Gear5GranularMediaSystemData(updatedSystemParticles, systemWalls, kn, kt);
+    this.systemData = new Gear5GranularMediaSystemData(updatedSystemParticles, systemWalls, kn, kt, L, W);
     this.integrationMethod = new GearPredictorCorrector<>();
   }
 
@@ -58,6 +59,10 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
     private final double kn;
     private final double kt;
+    private final double L;
+    private final double W;
+    private final double maxRadius;
+
     private final Collection<Wall> walls;
     private final NeighboursFinder neighboursFinder;
 
@@ -65,14 +70,28 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
     private Gear5GranularMediaSystemData(final Collection<Particle> particles,
                                          final Collection<Wall> walls,
-                                         final double kn, final double kt) {
+                                         final double kn, final double kt,  final double L, final double W) {
       super(particles);
       this.kn = kn;
       this.kt = kt;
+      this.L = L;
+      this.W = W;
       this.walls = walls;
-      this.neighboursFinder = new BruteForceMethodImpl();
+      this.neighboursFinder = new CellIndexMethodImpl();
       this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
+      this.maxRadius = getMaxRadius(particles);
       init();
+    }
+
+    // TODO: Along with init() this is going over all particles two times.
+    private double getMaxRadius(Collection<Particle> particles) {
+      double maxRadius = 0;
+      for(Particle particle : particles){
+        if(particle.radio() > maxRadius){
+          maxRadius = particle.radio();
+        }
+      }
+      return maxRadius;
     }
 
     @Override
@@ -100,8 +119,27 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     @Override
     protected void preEvaluate() {
       // calculate neighbours with the system's particles updated with the predicted values
-      this.currentNeighbours = neighboursFinder.run(particles(), 0, 0, RC, PERIODIC_LIMIT); // +++xmagicnumber: M and L FIXME
+      int M1, M2;
+      final double condition1 = L / (RC + 2 * maxRadius); // M1 condition for cell index
+      final double condition2 = W / (RC + 2 * maxRadius); // M2 condition for cell index
+
+      if(condition1 == Math.floor(condition1)){ // In case condition1 is an "integer" value
+        M1 = ((int)Math.floor(condition1)) - 1; // This is done to make sure M1 is strictly lesser than condition1
+      } else{
+        M1 = (int) Math.floor(condition1);
+      }
+      if(condition2 == Math.floor(condition2)){ // In case condition2 is an "integer" value
+        M2 = ((int)Math.floor(condition2)) - 1; // This is done to make sure M2 is strictly lesser than condition2
+      } else{
+        M2 = (int) Math.floor(condition2);
+      }
+//      OLD CONDITION
+//      final int M1 = ((int) Math.floor(L / (RC + 2 * maxRadius))) - 1; // TODO: M should be strictly < L / (RC + 2 * maxRadius)
+//      final int M2 = ((int) Math.floor(W / (RC + 2 * maxRadius))) - 1;
+
+      this.currentNeighbours = neighboursFinder.run(particles(), L, W, M1, M2, RC, PERIODIC_LIMIT); // +++xmagicnumber: M and L FIXME
       super.preEvaluate();
+
     }
 
     @Override
