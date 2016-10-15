@@ -3,10 +3,13 @@ package ar.edu.itba.ss.granularmedia.services.neighboursfinders;
 import ar.edu.itba.ss.granularmedia.interfaces.NeighboursFinder;
 import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class CellIndexMethodImpl implements NeighboursFinder {
+  private static final Logger LOGGER = LoggerFactory.getLogger(CellIndexMethodImpl.class);
   /**
    * On the run method, given a cell (row, col), it is necessary to compare with itself
    * and to go up, up-right, right and down-right. This is:
@@ -269,7 +272,6 @@ public class CellIndexMethodImpl implements NeighboursFinder {
     row = (M1 - 1) - getT(k1, point.y());
     col = getT(k2, point.x());
 
-    // if row or col is out of bounds => bad input was given ( x < 0 || x >= L || y < 0 || y >= L )
     return cellMatrix.addToCell(row, col, point);
   }
 

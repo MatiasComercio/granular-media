@@ -25,11 +25,6 @@ public class IOService {
 
   // Exit Codes
   public enum ExitStatus {
-
-//    LOGGER.warn("[FAIL] - " + varErrMsg + " must be a number. Caused by: ", e);
-//      System.out.println("[FAIL] - " + varErrMsg + " argument must be a number. Try 'help' for more information.");
-//    exit(NUMBER_EXPECTED);
-    // should not get here
     NO_ARGS(-1,
         "[FAIL] - No arguments passed. Try 'help' for more information.",
         "[FAIL] - No arguments passed. Try 'help' for more information."),

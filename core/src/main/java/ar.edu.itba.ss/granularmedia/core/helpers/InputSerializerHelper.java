@@ -76,6 +76,7 @@ public class InputSerializerHelper {
       numScanner.nextDouble(); // skip color[B]
       final double radio = numScanner.nextDouble();
       final double mass = numScanner.nextDouble();
+      numScanner.nextDouble(); // skip value int
       final ParticleType type =  ParticleType.valueOf(numScanner.next());
 
       particles.add(Particle.builder(x,y).id(id).vx(vx).vy(vy).forceX(forceX).forceY(forceY)

@@ -10,8 +10,11 @@ import org.immutables.value.Value;
         get = ""
 )
 public abstract class ParticleAbs {
+  private static double maxPressure = 0;
 
   private static long idGen = 1;
+
+  private double normalForce = 0;
 
   @Value.Default
   public long id() {
@@ -83,6 +86,28 @@ public abstract class ParticleAbs {
     return Math.sqrt(Math.pow(vx(), 2) + Math.pow(vy(), 2));
   }
 
+  private double normalForce() {
+    return normalForce;
+  }
+
+  public void normalForce(final double normalForce) {
+    this.normalForce = normalForce;
+  }
+
+  public void increaseNormalForce(final double normalForce) {
+    this.normalForce += normalForce;
+  }
+
+  @Value.Derived
+  @Value.Auxiliary
+  double perimeter() {
+    return 2 * Math.PI * radio();
+  }
+
+  public double pressure() {
+    return normalForce() / perimeter();
+  }
+
   @Value.Check
   void checkSpeed() {
     if (speed() < 0) {
@@ -117,9 +142,20 @@ public abstract class ParticleAbs {
     return Vector2D.builder(forceX()/mass(), forceY()/mass()).build();
   }
 
+  public static double getMaxPressure() {
+    return maxPressure;
+  }
+
+  public static void setMaxPressure(final double maxPressure) {
+    ParticleAbs.maxPressure = maxPressure;
+  }
 
   public Particle update(final Vector2DAbs uP, final Vector2DAbs uV, final Vector2DAbs uF) {
-    return Particle.builder(uP.x(), uP.y())
+    if (pressure() > maxPressure) {
+      maxPressure = pressure();
+    }
+
+    final Particle particle = Particle.builder(uP.x(), uP.y())
             .vx(uV.x()).vy(uV.y())
             .forceX(uF.x()).forceY(uF.y())
             .id(id())
@@ -128,6 +164,8 @@ public abstract class ParticleAbs {
             .mass(mass())
             .radio(radio())
             .build();
+    particle.normalForce(normalForce()); // update normal force
+    return particle;
   }
 
   /**

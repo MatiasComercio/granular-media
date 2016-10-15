@@ -46,7 +46,11 @@ public class GearPredictorCorrector<K extends GearSystemData> implements Numeric
       systemData.preFix();
       fix(systemData, dt, cParticle);
       // update system's particle
-      updatedSystemParticles.add(updatedParticle(systemData, cParticle));
+      final Particle cUpdatedSystemParticle = updatedParticle(systemData, cParticle);
+      updatedSystemParticles.add(cUpdatedSystemParticle);
+
+      // inform that this particle has just been predicted
+      systemData.fixed(cUpdatedSystemParticle);
     });
 
     // update all system's particles
