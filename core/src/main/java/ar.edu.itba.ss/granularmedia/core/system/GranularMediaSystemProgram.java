@@ -25,16 +25,19 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final Logger LOGGER = LoggerFactory.getLogger(GranularMediaSystemProgram.class);
 
   // system constants
-  private static final int N_PARTICLES = 100;
-  private static final double LENGTH = 5;
-  private static final double WIDTH = 3;
-  private static final double DIAMETER_OPENING = 2.99;
+  private static final int N_PARTICLES = 4;
+  private static final double LENGTH = 5; // Silo's length
+  private static final double WIDTH = 3; // Silo's width
+  private static final double FALL_LENGTH = 1.5; // Length of the area where particles fall out of the silo
+  private static final double RESPAWN_LENGTH = 1.5; // Length of the area where particles respawn
+  private static final double SYSTEM_LENGTH = RESPAWN_LENGTH + LENGTH + FALL_LENGTH;
+  private static final double DIAMETER_OPENING = 1.5; // Length of the opening
   private static final double MASS = 0.01;
   private static final double KN = 10e5;
   private static final double KT = 2 * KN;
   private static final double MIN_DIAMETER = DIAMETER_OPENING /7;
   private static final double MAX_DIAMETER = DIAMETER_OPENING /5;
-  private static final double SIMULATION_TIME = 3;
+  private static final double SIMULATION_TIME = 2.5;
   private static final double DEFAULT_DELTA_1 = .1 * Math.sqrt(MASS/KN);
   private static final double DELTA_1 = 1e-6;
   private static final double DELTA_2 = 0.001;
@@ -58,14 +61,14 @@ public class GranularMediaSystemProgram implements MainProgram {
     final Collection<Particle> systemParticles = initializeSystemParticles();
 
     // system's walls
-    final Collection<Wall> systemWalls = initializeSystemWalls(LENGTH, WIDTH, 0); // +++xmagicnumber
+    final Collection<Wall> systemWalls = initializeSystemWalls(SYSTEM_LENGTH, WIDTH, DIAMETER_OPENING); // +++xmagicnumber
 
     final TimeDrivenSimulationSystem granularMediaSystem =
-            new GearGranularMediaSystem(systemParticles, systemWalls, KN, KT, LENGTH, WIDTH);
+            new GearGranularMediaSystem(systemParticles, systemWalls, KN, KT, SYSTEM_LENGTH, WIDTH, FALL_LENGTH, RESPAWN_LENGTH);
 
     // static data
     final StaticData staticData =
-            StaticData.builder(N_PARTICLES, WIDTH, LENGTH, 0, SIMULATION_TIME).build(); // +++xmagicnumber
+            StaticData.builder(N_PARTICLES, WIDTH, SYSTEM_LENGTH, 0, SIMULATION_TIME).build(); // +++xmagicnumber
 
     // helper to write ovito file
     final OutputSerializerHelper outputSerializerHelper = new OutputSerializerHelper(staticData);
@@ -131,8 +134,8 @@ public class GranularMediaSystemProgram implements MainProgram {
       radios[i] = diameter/2;
     }
 
-    final Particle leftBottomParticle = particleFactory.create(ZERO, ZERO);
-    final Particle rightTopParticle = particleFactory.create(WIDTH + ZERO, LENGTH + ZERO);
+    final Particle leftBottomParticle = particleFactory.create(ZERO, FALL_LENGTH);
+    final Particle rightTopParticle = particleFactory.create(WIDTH + ZERO, FALL_LENGTH + LENGTH + ZERO);
 
     return particleFactory.randomPoints(
             leftBottomParticle,
@@ -159,9 +162,9 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double xToRightHorizontalWall = xFromRightHorizontalWall + horizontalWallWidth;
 
     final Wall leftBottomHorizontalWall =
-            Wall.builder(xFromLeftHorizontalWall, ZERO, xToLeftHorizontalWall, ZERO).build();
+            Wall.builder(xFromLeftHorizontalWall, FALL_LENGTH, xToLeftHorizontalWall, FALL_LENGTH).build();
     final Wall rightBottomHorizontalWall =
-            Wall.builder(xFromRightHorizontalWall, ZERO, xToRightHorizontalWall, ZERO).build();
+            Wall.builder(xFromRightHorizontalWall, FALL_LENGTH, xToRightHorizontalWall, FALL_LENGTH).build();
 
     systemWalls.add(leftVerticalWall);
     systemWalls.add(rightVerticalWall);

@@ -5,9 +5,7 @@ import ar.edu.itba.ss.granularmedia.interfaces.SystemData;
 import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.models.Vector2D;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /* package-private */ abstract class GearSystemData implements SystemData {
     /*
@@ -56,6 +54,14 @@ import java.util.Map;
   @Override
   public Collection<Particle> particles() {
     return particles;
+  }
+
+  protected Map<Particle, Map<Integer, Vector2D>> currentRs(){
+    return this.currentRs;
+  }
+
+  protected Map<Particle, Map<Integer, Vector2D>> predictedRs(){
+    return this.predictedRs;
   }
 
   // protected
