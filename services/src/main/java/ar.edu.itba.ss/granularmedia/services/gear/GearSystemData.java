@@ -72,6 +72,14 @@ import static java.lang.Math.pow;
     return particles;
   }
 
+  protected Map<Particle, Map<Integer, Vector2D>> currentRs(){
+    return this.currentRs;
+  }
+
+  protected Map<Particle, Map<Integer, Vector2D>> predictedRs(){
+    return this.predictedRs;
+  }
+
   // protected
   // access from package and subclasses of any package
 

@@ -55,11 +55,13 @@ public class GranularMediaSystemProgram implements MainProgram {
             InputSerializerHelper.loadDynamicData(args[I_DYNAMIC_DATA]);
 
     // system's walls
-    final Collection<Wall> systemWalls = initializeSystemWalls(staticData.length(), staticData.width(), 0); // +++xmagicnumber
+    final Collection<Wall> systemWalls =
+            initializeSystemWalls(staticData.length(), staticData.width(), staticData.diameterOpening()); // +++xmagicnumber
 
     final TimeDrivenSimulationSystem granularMediaSystem =
             new GearGranularMediaSystem(systemParticles, systemWalls,
-                    staticData.kn(), staticData.kt(), staticData.length(), staticData.width());
+                    staticData.kn(), staticData.kt(), staticData.length(), staticData.width(),
+                    FALL_LENGTH, RESPAWN_LENGTH);
 
     // helper to write ovito file
     final OutputSerializerHelper outputSerializerHelper = new OutputSerializerHelper(staticData);
@@ -138,9 +140,9 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double xToRightHorizontalWall = xFromRightHorizontalWall + horizontalWallWidth;
 
     final Wall leftBottomHorizontalWall =
-            Wall.builder(xFromLeftHorizontalWall, ZERO, xToLeftHorizontalWall, ZERO).build();
+            Wall.builder(xFromLeftHorizontalWall, FALL_LENGTH, xToLeftHorizontalWall, FALL_LENGTH).build();
     final Wall rightBottomHorizontalWall =
-            Wall.builder(xFromRightHorizontalWall, ZERO, xToRightHorizontalWall, ZERO).build();
+            Wall.builder(xFromRightHorizontalWall, FALL_LENGTH, xToRightHorizontalWall, FALL_LENGTH).build();
 
     systemWalls.add(leftVerticalWall);
     systemWalls.add(rightVerticalWall);

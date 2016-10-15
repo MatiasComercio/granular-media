@@ -78,8 +78,8 @@ public class GenerateDynamicFileProgram implements MainProgram {
       radios[i] = diameter/2;
     }
 
-    final Particle leftBottomParticle = particleFactory.create(ZERO, ZERO);
-    final Particle rightTopParticle = particleFactory.create(staticData.width() + ZERO, staticData.length() + ZERO);
+    final Particle leftBottomParticle = particleFactory.create(ZERO, FALL_LENGTH);
+    final Particle rightTopParticle = particleFactory.create(staticData.width() + ZERO, FALL_LENGTH + staticData.length() + ZERO);
 
     return particleFactory.randomPoints(
             leftBottomParticle,
