@@ -34,9 +34,10 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
       updatedSystemParticles.add(updatedParticle);
     });
 
-    // Notice L is the whole system's length (silo's length + fallLength + respawnLength) and not
+    // Notice length is the whole system's length (silo's length + fallLength + respawnLength) and not
     // simply the silo's length
-    this.systemData = new Gear5GranularMediaSystemData(updatedSystemParticles, systemWalls, kn, kt, L, W, fallLength, respawnLength);
+    this.systemData = new Gear5GranularMediaSystemData(updatedSystemParticles, systemWalls,
+            kn, kt, L, W, fallLength, respawnLength);
     this.integrationMethod = new GearPredictorCorrector<>();
   }
 
@@ -50,7 +51,7 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     integrationMethod.evolveSystem(systemData, dt);
   }
 
-  
+
   // Custom System Data Implementation for this system
   private static class Gear5GranularMediaSystemData extends Gear5SystemData {
     private static final double RC = 0;
@@ -62,15 +63,14 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     private static final int VELOCITY_DERIVED_ORDER = 1;
 
     private static final int RESPAWN_MAX_TRIES = 5;
-
+    private static final double ZERO = 0; // +++xcheck: repeated variable in other calses
 
     private final double kn;
     private final double kt;
-    private final double L;
-    private final double W;
+    private final double length;
+    private final double width;
     private final double fallLength;
     private final double respawnLength;
-    private final double maxRadius;
     private final int M1;
     private final int M2;
 
@@ -82,22 +82,22 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
     private Gear5GranularMediaSystemData(final Collection<Particle> particles,
                                          final Collection<Wall> walls, final double kn, final double kt,
-                                         final double L, final double W, final double fallLength, final double respawnLength) {
+                                         final double length, final double width, final double fallLength, final double respawnLength) {
       super(particles);
       this.kn = kn;
       this.kt = kt;
-      this.L = L;
-      this.W = W;
+      this.length = length;
+      this.width = width;
       this.fallLength = fallLength;
       this.respawnLength = respawnLength;
       this.walls = walls;
       this.neighboursFinder = new CellIndexMethodImpl();
       this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
-      this.maxRadius = initAndGetMaxRadio();
       this.respawnQueue = new LinkedList<>();
 
-      final double condition1 = L / (RC + 2 * maxRadius); // M1 condition for cell index
-      final double condition2 = W / (RC + 2 * maxRadius); // M2 condition for cell index
+      final double maxRadius = initAndGetMaxRadio();
+      final double condition1 = length / (RC + 2 * maxRadius); // M1 condition for cell index
+      final double condition2 = width / (RC + 2 * maxRadius); // M2 condition for cell index
 
       if (condition1 == Math.floor(condition1)) { // In case condition1 is an "integer" value
         this.M1 = ((int)Math.floor(condition1)) - 1; // This is done to make sure M1 is strictly lesser than condition1
@@ -136,78 +136,65 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     @Override
     protected void preEvaluate() {
       // calculate neighbours with the system's particles updated with the predicted values
-      this.currentNeighbours = neighboursFinder.run(predictedParticles(), L, W, M1, M2, RC, PERIODIC_LIMIT);
+      this.currentNeighbours = neighboursFinder.run(predictedParticles(), length, width, M1, M2, RC, PERIODIC_LIMIT);
       super.preEvaluate();
 
     }
 
     @Override
+    public void fixed(@SuppressWarnings("UnusedParameters") final Particle particle) {
+      if(particle.y() < fallLength){
+        respawnQueue.add(particle);
+        removeWhenFinish(particle);
+      }
+
+      super.fixed(particle);
+    }
+
+    @SuppressWarnings("SpellCheckingInspection")
+    @Override
     protected void postFix() {
-      // TODO: Avoid going over particles 2 times: Add particles in the Fix() method
-      for(Particle particle: particles()){
-        if(particle.y() < fallLength){
-          respawnQueue.add(particle);
+      super.postFix();
+
+      final double respawnMinX = ZERO;
+      final double respawnMaxX = respawnMinX + width;
+
+      final double respawnMinY = fallLength + length;
+      final double respawnMaxY = respawnMinX + respawnLength;
+
+      // idea from: http://stackoverflow.com/questions/223918/iterating-through-a-collection-avoiding-concurrentmodificationexception-when-re
+      for (Iterator<Particle> iterator = respawnQueue.iterator(); iterator.hasNext();) {
+        final Particle particle = iterator.next();
+        if (respawn(respawnMinX, respawnMaxX, respawnMinY, respawnMaxY, particle, RESPAWN_MAX_TRIES)) {
+          iterator.remove();
         }
       }
-
-      for(int i=0; i<respawnQueue.size(); i++){
-        // L is currently the system's length, hence (L-fallLength-respawnLength) is the length of the silo
-        respawn(L-fallLength-respawnLength, W, fallLength, respawnLength, respawnQueue.poll(), RESPAWN_MAX_TRIES);
-      }
-
-      super.postFix();
     }
 
-    private void respawn(final double L, final double W, final double fallLength,
-                         final double respawnLength, final Particle particle, final int maxTries) {
-      deleteParticle(particle);
-      final Particle updatedParticle = updateParticle(L, W, fallLength, respawnLength, particle, maxTries);
-      if(updatedParticle != null){ // if it's null, then maxTries were reached trying to update the particle
-        spawnParticle(updatedParticle);
-      }
-    }
-
-    private void deleteParticle(final Particle particle) {
-      particles().remove(particle);
-      predictedRs().remove(particle);
-      currentRs().remove(particle);
-    }
-
-    private Particle updateParticle(final double L, final double W, final double fallLength, final double respawnLength,
-                                    final Particle particle, final int maxTries) {
-      final double minX = 0;
-      final double maxX = W;
-      final double minY = fallLength + L;
-      final double maxY = fallLength + L + respawnLength;
-      double pX;
-      double pY;
+    private boolean respawn(final double minX, final double maxX, final double minY, final double maxY,
+                            final Particle particle, final int respawnMaxTries) {
       int tries = 0;
-      do{
-        pX = RandomService.randomDouble(minX, maxX);
-        pY = RandomService.randomDouble(minY, maxY);
-        tries++;
+      Particle respawnedParticle;
+      do {
+        if (tries >= respawnMaxTries) {
+          return false;
+        }
 
-      } while(isColliding(pX, pY, particle.radio()) && tries < maxTries);
+        final double x = RandomService.randomDouble(minX, maxX);
+        final double y = RandomService.randomDouble(minY, maxY);
 
-      if(tries >= maxTries){
-        respawnQueue.add(particle); // Queue the particle to be updated on next system evolve
-        return null;
-      }
-      return Particle.builder(pX, pY).id(particle.id())
-              .radio(particle.radio()).mass(particle.mass()).forceY(-particle.mass() * G).type(particle.type())
-              .build();
+        respawnedParticle = Particle.builder(x, y).id(particle.id())
+                .radio(particle.radio()).mass(particle.mass()).forceY(-particle.mass() * G).type(particle.type())
+                .build();
+      } while (overlapsOtherParticles(respawnedParticle));
+      // if here, particle does not overlaps any current system's particles
+      spawnParticle(respawnedParticle);
+      return true;
     }
 
-    private boolean isColliding(final double pX, final double pY, final double radio){
-      double distanceX, distanceY, distance;
-      // TODO: use a single cell index iteration? (Although it may be less efficient
-      // due to the overhead of creating the structure)
-      for(Particle particle : particles()){
-        distanceX = particle.x() - pX;
-        distanceY = particle.y() - pY;
-        distance = Math.hypot(distanceX, distanceY);
-        if(distance <= (particle.radio() + radio)){
-          LOGGER.debug("Collision detected when respawning particles");
+    private boolean overlapsOtherParticles(final Particle particle) {
+      for (final Particle systemParticle : particles()) {
+        if (Space2DMaths.distanceBetween(systemParticle, particle) <= 0) {
           return true;
         }
       }

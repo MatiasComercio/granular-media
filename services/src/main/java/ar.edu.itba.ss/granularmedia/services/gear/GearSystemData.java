@@ -56,9 +56,12 @@ import static java.lang.Math.pow;
   private Collection<Particle> particles;
   private Collection<Particle> predictedParticles;
 
+  private Collection<Particle> particlesToRemove;
+
   /* package-private */ GearSystemData(final Collection<Particle> particles) {
     this.particles = particles;
     this.predictedParticles = new HashSet<>();
+    this.particlesToRemove = new HashSet<>();
 
     final int nParticles = particles.size();
 
@@ -167,6 +170,22 @@ import static java.lang.Math.pow;
   }
 
   /**
+   * Execute some statements just after fix step for the given particle
+   */
+  @SuppressWarnings("WeakerAccess")
+  public void fixed(@SuppressWarnings("UnusedParameters") final Particle particle) {
+
+  }
+
+  /**
+   * Flags the given {@code particle} to be removed when all the gear predictor corrector step has finished
+   * @param particle the particle to be removed from the system
+   */
+  protected void removeWhenFinish(final Particle particle) {
+    particlesToRemove.add(particle);
+  }
+
+  /**
    * Execute some statements after prediction step
    */
   @SuppressWarnings("WeakerAccess")
@@ -203,7 +222,7 @@ import static java.lang.Math.pow;
    */
   @SuppressWarnings("WeakerAccess")
   protected void postFix() {
-
+    particlesToRemove.forEach(this::remove);
   }
 
   /* package-private */
@@ -335,5 +354,15 @@ import static java.lang.Math.pow;
     }
 
     return factorial;
+  }
+
+  /**
+   * Removes the given {@code particle} from all the system's maps
+   * @param particle the particle to be removed
+   */
+  private void remove(final Particle particle) {
+    particles.remove(particle);
+    predictedRs.remove(particle);
+    currentRs.remove(particle);
   }
 }

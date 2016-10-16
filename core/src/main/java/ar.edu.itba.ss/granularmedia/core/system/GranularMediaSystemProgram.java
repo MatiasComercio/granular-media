@@ -139,7 +139,7 @@ public class GranularMediaSystemProgram implements MainProgram {
                              |                      |        diameterOpening       |
                              |      FALL_LENGTH     |                              |
                              |                     _|                              |
-                                                    --------------------------------
+                                       ZERO         --------------------------------
                                                                     |
                                                                   width
 
