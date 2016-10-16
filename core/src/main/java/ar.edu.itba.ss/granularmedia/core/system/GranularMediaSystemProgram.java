@@ -3,7 +3,6 @@ package ar.edu.itba.ss.granularmedia.core.system;
 import ar.edu.itba.ss.granularmedia.core.helpers.InputSerializerHelper;
 import ar.edu.itba.ss.granularmedia.core.helpers.OutputSerializerHelper;
 import ar.edu.itba.ss.granularmedia.core.system.integration.GearGranularMediaSystem;
-import ar.edu.itba.ss.granularmedia.core.system.integration.GearGranularMediaSystem.Gear5GranularMediaSystemData;
 import ar.edu.itba.ss.granularmedia.interfaces.MainProgram;
 import ar.edu.itba.ss.granularmedia.interfaces.TimeDrivenSimulationSystem;
 import ar.edu.itba.ss.granularmedia.models.Particle;
@@ -32,7 +31,7 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final String DEFAULT_OUTPUT_FOLDER = "output";
   private static final String DEFAULT_OVITO_FILE_NAME = "ovito";
   private static final double MS_TO_S = 1/1000.0;
-  private static final double DELTA_LOG = 0.5;
+  private static final double DELTA_LOG = 0.025;
 
   // run args index
   private static final int I_STATIC_DATA = 1;
@@ -60,9 +59,7 @@ public class GranularMediaSystemProgram implements MainProgram {
     final Collection<Wall> systemWalls = initializeSystemWalls(staticData);
 
     final TimeDrivenSimulationSystem<Gear5GranularMediaSystemData> granularMediaSystem =
-            new GearGranularMediaSystem(systemParticles, systemWalls,
-                    staticData.kn(), staticData.kt(), staticData.length(), staticData.width(),
-                    staticData.fallLength(), staticData.respawnLength());
+            new GearGranularMediaSystem(systemParticles, systemWalls, staticData);
 
     // helper to write ovito file
     final OutputSerializerHelper outputSerializerHelper = new OutputSerializerHelper(staticData);
@@ -71,6 +68,8 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double defaultDelta1 = .1 * Math.sqrt(staticData.mass()/staticData.kn());
     final double dt = Math.min(defaultDelta1, staticData.delta1());
     System.out.printf("Chosen dt: %es\n", dt);
+    System.out.println(staticData);
+    System.out.println("Real system particles: " + systemParticles.size());
 
     // simulation itself
     System.out.println("Running simulation...");
@@ -105,11 +104,12 @@ public class GranularMediaSystemProgram implements MainProgram {
                 granularMediaSystem.getSystemData().particles(),
                 granularMediaSystem.getSystemData().walls(),
                 step++, outputSerializerHelper);
-        if (currentTime >= (DELTA_LOG * logStep)) {
-          System.out.printf("\tClock: %s; Current simulation time: %f ; Final simulation time: %f\n",
-                  LocalDateTime.now(), currentTime, simulationTime);
-          logStep ++;
-        }
+      }
+
+      if (currentTime >= (DELTA_LOG * logStep)) {
+        System.out.printf("\tClock: %s; Current simulation time: %f ; Final simulation time: %f\n",
+                LocalDateTime.now(), currentTime, simulationTime);
+        logStep ++;
       }
 
       // evolve system

@@ -75,13 +75,23 @@ public abstract class StaticDataAbs {
   }
 
   @Value.Derived
+  public double respawnMinY() {
+    return fallLength() + length();
+  }
+
+  @Value.Derived
+  public double respawnMaxY() {
+    return respawnMinY() + maxDiameter();
+  }
+
+  @Value.Derived
   public double fallLength() {
-    return 1; // Length of the area where particles fall out of the silo
+    return length()/10; // Length of the area where particles fall out of the silo
   }
 
   @Value.Derived
   public double respawnLength() {
-    return 1; // Length of the area where particles respawn
+    return (respawnMaxY() - respawnMinY()); // Length of the area where particles respawn
   }
 
   @Value.Derived
