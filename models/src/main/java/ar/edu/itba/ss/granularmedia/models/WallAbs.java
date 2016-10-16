@@ -3,6 +3,8 @@ package ar.edu.itba.ss.granularmedia.models;
 import org.immutables.builder.Builder;
 import org.immutables.value.Value;
 
+import static ar.edu.itba.ss.granularmedia.models.ParticleType.*;
+
 @Value.Immutable
 @Value.Style(
         typeAbstract = "*Abs",
@@ -95,7 +97,8 @@ public abstract class WallAbs {
     return Math.abs(xTo() - xFrom());
   }
 
-  @Value.Derived
+  @Value.Default
+  @Value.Auxiliary
   public WallType type() {
     final double length = length();
     final double width = width();
@@ -106,7 +109,11 @@ public abstract class WallAbs {
       return WallType.VERTICAL;
     }
     // only Horizontal Wall remains
-    return WallType.HORIZONTAL;
+    if (ZERO.equals(xFrom())) {
+      return WallType.HORIZONTAL_LEFT; // only matches start position
+    } else {
+      return WallType.HORIZONTAL_RIGHT;
+    }
   }
 
   @Value.Check
@@ -114,6 +121,34 @@ public abstract class WallAbs {
     if (ZERO.equals(length() + width())) {
       throw new IllegalArgumentException("You should not create a Wall without " +
               "width neither length");
+    }
+  }
+
+  @Value.Derived
+  public Particle start() {
+    final Particle.Builder builder = Particle.builder(xFrom(), yFrom());
+    chooseType(builder);
+    return builder.build();
+  }
+
+  @Value.Derived
+  public Particle end() {
+    final Particle.Builder builder = Particle.builder(xTo(), yTo());
+    chooseType(builder);
+    return builder.build();
+  }
+
+  private void chooseType(final Particle.Builder builder) {
+    switch (type()) {
+      case HORIZONTAL_LEFT:
+        builder.type(OPENING_LEFT);
+        break;
+      case HORIZONTAL_RIGHT:
+        builder.type(OPENING_RIGHT);
+        break;
+      default:
+        builder.type(WALL);
+        break;
     }
   }
 }

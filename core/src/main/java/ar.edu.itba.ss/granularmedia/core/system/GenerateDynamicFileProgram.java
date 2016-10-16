@@ -15,9 +15,6 @@ import java.util.Collection;
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.*;
 
 public class GenerateDynamicFileProgram implements MainProgram {
-  // system's specific parameters //+++xcheck: repeated variable at GranularMediaSystemProgram
-  private static final double FALL_LENGTH = 1; // Length of the area where particles fall out of the silo
-
   // condition constants
   private static final boolean OVERLAP_ALLOWED = false;
   private static final int MAX_OVERLAP_TRIES = 100;
@@ -81,8 +78,9 @@ public class GenerateDynamicFileProgram implements MainProgram {
       radios[i] = diameter/2;
     }
 
-    final Particle leftBottomParticle = particleFactory.create(ZERO, FALL_LENGTH);
-    final Particle rightTopParticle = particleFactory.create(staticData.width() + ZERO, FALL_LENGTH + staticData.length() + ZERO);
+    final Particle leftBottomParticle = particleFactory.create(ZERO, staticData.fallLength());
+    final Particle rightTopParticle =
+            particleFactory.create(staticData.width() + ZERO, staticData.fallLength() + staticData.length() + ZERO);
 
     return particleFactory.randomPoints(
             leftBottomParticle,

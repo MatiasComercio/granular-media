@@ -1,6 +1,6 @@
 package ar.edu.itba.ss.granularmedia.interfaces;
 
-public interface TimeDrivenSimulationSystem extends SimulationSystem {
+public interface TimeDrivenSimulationSystem<E extends SystemData> extends SimulationSystem<E> {
   /**
    * Evolves the system a {@code dt} time interval.
    *

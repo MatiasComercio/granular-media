@@ -3,6 +3,7 @@ package ar.edu.itba.ss.granularmedia.core.system;
 import ar.edu.itba.ss.granularmedia.core.helpers.InputSerializerHelper;
 import ar.edu.itba.ss.granularmedia.core.helpers.OutputSerializerHelper;
 import ar.edu.itba.ss.granularmedia.core.system.integration.GearGranularMediaSystem;
+import ar.edu.itba.ss.granularmedia.core.system.integration.GearGranularMediaSystem.Gear5GranularMediaSystemData;
 import ar.edu.itba.ss.granularmedia.interfaces.MainProgram;
 import ar.edu.itba.ss.granularmedia.interfaces.TimeDrivenSimulationSystem;
 import ar.edu.itba.ss.granularmedia.models.Particle;
@@ -22,10 +23,6 @@ import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.COULD_N
 
 public class GranularMediaSystemProgram implements MainProgram {
   private static final Logger LOGGER = LoggerFactory.getLogger(GranularMediaSystemProgram.class);
-
-  // system's specific parameters
-  private static final double FALL_LENGTH = 1; // Length of the area where particles fall out of the silo
-  private static final double RESPAWN_LENGTH = 1.5; // Length of the area where particles respawn
 
   // non-magic number constants
   private static final double ZERO = 0;
@@ -60,13 +57,12 @@ public class GranularMediaSystemProgram implements MainProgram {
             InputSerializerHelper.loadDynamicData(args[I_DYNAMIC_DATA]);
 
     // system's walls
-    final Collection<Wall> systemWalls =
-            initializeSystemWalls(staticData.length(), staticData.width(), staticData.diameterOpening());
+    final Collection<Wall> systemWalls = initializeSystemWalls(staticData);
 
-    final TimeDrivenSimulationSystem granularMediaSystem =
+    final TimeDrivenSimulationSystem<Gear5GranularMediaSystemData> granularMediaSystem =
             new GearGranularMediaSystem(systemParticles, systemWalls,
                     staticData.kn(), staticData.kt(), staticData.length(), staticData.width(),
-                    FALL_LENGTH, RESPAWN_LENGTH);
+                    staticData.fallLength(), staticData.respawnLength());
 
     // helper to write ovito file
     final OutputSerializerHelper outputSerializerHelper = new OutputSerializerHelper(staticData);
@@ -92,7 +88,7 @@ public class GranularMediaSystemProgram implements MainProgram {
     return staticData.withSimulationTime(simulationTime).withDelta1(delta1).withDelta2(delta2);
   }
 
-  private void startSimulation(final TimeDrivenSimulationSystem granularMediaSystem,
+  private void startSimulation(final TimeDrivenSimulationSystem<Gear5GranularMediaSystemData> granularMediaSystem,
                                final double dt, final double simulationTime, final double delta2,
                                final OutputSerializerHelper outputSerializerHelper) {
     final Path pathToOvitoFile = createOvito(DEFAULT_OUTPUT_FOLDER, DEFAULT_OVITO_FILE_NAME);
@@ -107,6 +103,7 @@ public class GranularMediaSystemProgram implements MainProgram {
       if (currentTime >= (delta2 * step)) {
         appendToOvito(pathToOvitoFile,
                 granularMediaSystem.getSystemData().particles(),
+                granularMediaSystem.getSystemData().walls(),
                 step++, outputSerializerHelper);
         if (currentTime >= (DELTA_LOG * logStep)) {
           System.out.printf("\tClock: %s; Current simulation time: %f ; Final simulation time: %f\n",
@@ -130,46 +127,27 @@ public class GranularMediaSystemProgram implements MainProgram {
     System.out.printf("Total simulation time: %f s\n", simulationDuration * MS_TO_S);
   }
 
-  /*
-                             |                      |                              |
-                             |      RESPAWN_LENGTH  |                              |
-                             |                     _|                              |_
-                             |                      |                              |
-                             |                      |                              |
-        totalSystemLength    |      length          |                              |
-                             |                      |                              |
-                             |                     _|___________        ___________|_
-                             |                      |        diameterOpening       |
-                             |      FALL_LENGTH     |                              |
-                             |                     _|                              |
-                                       ZERO         --------------------------------
-                                                                    |
-                                                                  width
-
-   */
-  private Collection<Wall> initializeSystemWalls(final double length,
-                                                 final double width,
-                                                 final double diameterOpening) {
+  private Collection<Wall> initializeSystemWalls(final StaticData staticData) {
     final Collection<Wall> systemWalls = new HashSet<>();
 
-    final double totalSystemLength = FALL_LENGTH + length + RESPAWN_LENGTH;
+    final Wall leftVerticalWall = Wall.builder(ZERO, ZERO, ZERO, staticData.totalSystemLength()).build();
+    final Wall rightVerticalWall = Wall.builder(staticData.width(), ZERO, staticData.width(), staticData.totalSystemLength()).build();
 
-    final Wall leftVerticalWall = Wall.builder(ZERO, ZERO, ZERO, totalSystemLength).build();
-    final Wall rightVerticalWall = Wall.builder(width, ZERO, width, totalSystemLength).build();
-
-    final double horizontalWallWidth = (width-diameterOpening) / 2;
+    final double horizontalWallWidth = (staticData.width()-staticData.diameterOpening()) / 2;
 
     @SuppressWarnings("UnnecessaryLocalVariable")
     final double xFromLeftHorizontalWall = ZERO;
     final double xToLeftHorizontalWall = xFromLeftHorizontalWall + horizontalWallWidth;
 
-    final double xFromRightHorizontalWall = (width+diameterOpening) / 2;
+    final double xFromRightHorizontalWall = (staticData.width() + staticData.diameterOpening()) / 2;
     final double xToRightHorizontalWall = xFromRightHorizontalWall + horizontalWallWidth;
 
     final Wall leftBottomHorizontalWall =
-            Wall.builder(xFromLeftHorizontalWall, FALL_LENGTH, xToLeftHorizontalWall, FALL_LENGTH).build();
+            Wall.builder(xFromLeftHorizontalWall, staticData.fallLength(),
+                    xToLeftHorizontalWall, staticData.fallLength()).build();
     final Wall rightBottomHorizontalWall =
-            Wall.builder(xFromRightHorizontalWall, FALL_LENGTH, xToRightHorizontalWall, FALL_LENGTH).build();
+            Wall.builder(xFromRightHorizontalWall, staticData.fallLength(),
+                    xToRightHorizontalWall, staticData.fallLength()).build();
 
     systemWalls.add(leftVerticalWall);
     systemWalls.add(rightVerticalWall);
@@ -199,9 +177,10 @@ public class GranularMediaSystemProgram implements MainProgram {
 
   private void appendToOvito(final Path ovitoFilePath,
                              final Collection<Particle> particleSet,
+                             final Collection<Wall> walls,
                              final long iteration,
                              final OutputSerializerHelper outputSerializerHelper) {
-    final String ovitoOutputData = outputSerializerHelper.ovitoOutput(particleSet, iteration);
+    final String ovitoOutputData = outputSerializerHelper.ovitoOutput(particleSet, walls, iteration);
     IOService.appendToFile(ovitoFilePath, ovitoOutputData);
   }
 }

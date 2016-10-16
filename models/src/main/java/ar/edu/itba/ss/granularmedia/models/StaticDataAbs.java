@@ -3,6 +3,24 @@ package ar.edu.itba.ss.granularmedia.models;
 import org.immutables.builder.Builder;
 import org.immutables.value.Value;
 
+/**
+ * <pre>
+                         |                      |                              |
+                         |      RESPAWN_LENGTH  |                              |
+                         |                     _|                              |_
+                         |                      |                              |
+                         |                      |                              |
+    totalSystemLength    |      length          |                              |
+                         |                      |                              |
+                         |                     _|___________        ___________|_
+                         |                      |        diameterOpening       |
+                         |      FALL_LENGTH     |                              |
+                         |                     _|                              |
+                                   ZERO         --------------------------------
+                                                                |
+                                                              width
+  * </pre>
+*/
 @Value.Immutable
 @Value.Style(
         typeAbstract = "*Abs",
@@ -54,5 +72,20 @@ public abstract class StaticDataAbs {
   @Value.Default
   public double delta2() {
     return 0;
+  }
+
+  @Value.Derived
+  public double fallLength() {
+    return 1; // Length of the area where particles fall out of the silo
+  }
+
+  @Value.Derived
+  public double respawnLength() {
+    return 1; // Length of the area where particles respawn
+  }
+
+  @Value.Derived
+  public double totalSystemLength() {
+    return fallLength() + length() + respawnLength();
   }
 }
