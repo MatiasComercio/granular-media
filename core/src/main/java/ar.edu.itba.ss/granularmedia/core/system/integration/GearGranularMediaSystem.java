@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Gear5GranularMediaSystemData.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(Gear5GranularMediaSystemData.class);
   private static final double G = 9.80665;
 
   private final NumericIntegrationMethod<Gear5SystemData> integrationMethod;
@@ -50,6 +50,8 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     integrationMethod.evolveSystem(systemData, dt);
   }
 
+  
+  // Custom System Data Implementation for this system
   private static class Gear5GranularMediaSystemData extends Gear5SystemData {
     private static final double RC = 0;
     private static final boolean PERIODIC_LIMIT = false;
@@ -58,6 +60,9 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
     private static final int TANGENTIAL = 1;
 
     private static final int VELOCITY_DERIVED_ORDER = 1;
+
+    private static final int RESPAWN_MAX_TRIES = 5;
+
 
     private final double kn;
     private final double kt;
@@ -138,8 +143,6 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
     @Override
     protected void postFix() {
-      final int MAX_TRIES = 5;
-
       // TODO: Avoid going over particles 2 times: Add particles in the Fix() method
       for(Particle particle: particles()){
         if(particle.y() < fallLength){
@@ -149,28 +152,29 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
 
       for(int i=0; i<respawnQueue.size(); i++){
         // L is currently the system's length, hence (L-fallLength-respawnLength) is the length of the silo
-        respawn(L-fallLength-respawnLength, W, fallLength, respawnLength, respawnQueue.poll(), MAX_TRIES);
+        respawn(L-fallLength-respawnLength, W, fallLength, respawnLength, respawnQueue.poll(), RESPAWN_MAX_TRIES);
       }
 
       super.postFix();
     }
 
-    private void respawn(double L, double W, double fallLength, double respawnLength, Particle particle, int maxTries) {
+    private void respawn(final double L, final double W, final double fallLength,
+                         final double respawnLength, final Particle particle, final int maxTries) {
       deleteParticle(particle);
-      Particle updatedParticle = updateParticle(L, W, fallLength, respawnLength, particle, maxTries);
+      final Particle updatedParticle = updateParticle(L, W, fallLength, respawnLength, particle, maxTries);
       if(updatedParticle != null){ // if it's null, then maxTries were reached trying to update the particle
-          spawnParticle(updatedParticle);
+        spawnParticle(updatedParticle);
       }
     }
 
-    private void deleteParticle(Particle particle) {
+    private void deleteParticle(final Particle particle) {
       particles().remove(particle);
       predictedRs().remove(particle);
       currentRs().remove(particle);
     }
 
-    private Particle updateParticle(double L, double W, double fallLength, double respawnLength,
-                                    Particle particle, int maxTries) {
+    private Particle updateParticle(final double L, final double W, final double fallLength, final double respawnLength,
+                                    final Particle particle, final int maxTries) {
       final double minX = 0;
       final double maxX = W;
       final double minY = fallLength + L;
@@ -179,36 +183,38 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
       double pY;
       int tries = 0;
       do{
-          pX = RandomService.randomDouble(minX, maxX);
-          pY = RandomService.randomDouble(minY, maxY);
-          tries++;
+        pX = RandomService.randomDouble(minX, maxX);
+        pY = RandomService.randomDouble(minY, maxY);
+        tries++;
 
       } while(isColliding(pX, pY, particle.radio()) && tries < maxTries);
 
       if(tries >= maxTries){
-          respawnQueue.add(particle); // Queue the particle to be updated on next system evolve
-          return null;
+        respawnQueue.add(particle); // Queue the particle to be updated on next system evolve
+        return null;
       }
-      return Particle.builder(pX, pY).id(particle.id()).radio(particle.radio()).mass(particle.mass()).forceY(-particle.mass() * G).build();
+      return Particle.builder(pX, pY).id(particle.id())
+              .radio(particle.radio()).mass(particle.mass()).forceY(-particle.mass() * G).type(particle.type())
+              .build();
     }
 
-      private boolean isColliding(double pX, double pY, double radio){
-          double distanceX, distanceY, distance;
-          // TODO: use a single cell index iteration? (Although it may be less efficient
-          // due to the overhead of creating the structure)
-          for(Particle particle : particles()){
-            distanceX = particle.x() - pX;
-            distanceY = particle.y() - pY;
-            distance = Math.hypot(distanceX, distanceY);
-            if(distance <= (particle.radio() + radio)){
-                LOGGER.debug("Collision detected when respawning particles");
-                return true;
-            }
-          }
-          return false;
+    private boolean isColliding(final double pX, final double pY, final double radio){
+      double distanceX, distanceY, distance;
+      // TODO: use a single cell index iteration? (Although it may be less efficient
+      // due to the overhead of creating the structure)
+      for(Particle particle : particles()){
+        distanceX = particle.x() - pX;
+        distanceY = particle.y() - pY;
+        distance = Math.hypot(distanceX, distanceY);
+        if(distance <= (particle.radio() + radio)){
+          LOGGER.debug("Collision detected when respawning particles");
+          return true;
+        }
       }
+      return false;
+    }
 
-      private void spawnParticle(Particle particle) {
+    private void spawnParticle(final Particle particle) {
       this.particles().add(particle);
       this.predictedRs().put(particle, new HashMap<>(sVectors()));
       this.currentRs().put(particle, setInitialDerivativeValues(particle));

@@ -272,16 +272,7 @@ public class CellIndexMethodImpl implements NeighboursFinder {
     row = (M1 - 1) - getT(k1, point.y());
     col = getT(k2, point.x());
 
-    // if row or col is out of bounds => bad input was given ( x < 0 || x >= L || y < 0 || y >= L )
-    //TODO: REMOVE, THIS IS DEBUG ONLY
-    try{
-      return cellMatrix.addToCell(row, col, point);
-    } catch (IndexOutOfBoundsException e){
-//      LOGGER.error("Particle Out of Bounds!");
-//      LOGGER.error("row: " + row + " col: " + col + " M1: " + M1 + " M2: " + M2 + " x: " + point.x() + " y: " + point.y());
-      return cellMatrix.get(0,0); // This cell is added to non-empty, no harm done
-    }
-
+    return cellMatrix.addToCell(row, col, point);
   }
 
   /**

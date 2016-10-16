@@ -22,6 +22,10 @@ import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.COULD_N
 public class GranularMediaSystemProgram implements MainProgram {
   private static final Logger LOGGER = LoggerFactory.getLogger(GranularMediaSystemProgram.class);
 
+  // system's specific parameters
+  private static final double FALL_LENGTH = 1.5; // Length of the area where particles fall out of the silo
+  private static final double RESPAWN_LENGTH = 1.5; // Length of the area where particles respawn
+
   // non-magic number constants
   private static final double ZERO = 0;
 
