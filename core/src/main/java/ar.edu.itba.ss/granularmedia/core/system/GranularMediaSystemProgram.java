@@ -60,7 +60,7 @@ public class GranularMediaSystemProgram implements MainProgram {
 
     // system's walls
     final Collection<Wall> systemWalls =
-            initializeSystemWalls(staticData.length(), staticData.width(), staticData.diameterOpening()); // +++xmagicnumber
+            initializeSystemWalls(staticData.length(), staticData.width(), staticData.diameterOpening());
 
     final TimeDrivenSimulationSystem granularMediaSystem =
             new GearGranularMediaSystem(systemParticles, systemWalls,
@@ -73,12 +73,12 @@ public class GranularMediaSystemProgram implements MainProgram {
     // default delta time
     final double defaultDelta1 = .1 * Math.sqrt(staticData.mass()/staticData.kn());
     final double dt = Math.min(defaultDelta1, staticData.delta1());
-    LOGGER.info("Chosen dt: {}s", dt);
+    System.out.printf("Chosen dt: %es\n", dt);
 
     // simulation itself
-    LOGGER.info("Starting simulation...");
+    System.out.println("Starting simulation...");
     startSimulation(granularMediaSystem, dt, staticData.simulationTime(), staticData.delta2(), outputSerializerHelper);
-    LOGGER.info("[FINISHED]");
+    System.out.println("[FINISHED]");
   }
 
   // private
@@ -108,7 +108,7 @@ public class GranularMediaSystemProgram implements MainProgram {
                 granularMediaSystem.getSystemData().particles(),
                 step++, outputSerializerHelper);
         if (currentTime >= (DELTA_LOG * logStep)) {
-          LOGGER.debug("Current time: {} ; Simulation Time: {} ; Step: {}", currentTime, simulationTime, step);
+          System.out.printf("\tCurrent time: %f ; Simulation Time: %f ; Step: %d\n", currentTime, simulationTime, step);
           logStep ++;
         }
       }
