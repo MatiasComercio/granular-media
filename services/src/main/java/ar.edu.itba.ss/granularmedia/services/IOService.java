@@ -3,15 +3,13 @@ package ar.edu.itba.ss.granularmedia.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.*;
 
@@ -19,17 +17,29 @@ public class IOService {
   private static final Logger LOGGER = LoggerFactory.getLogger(IOService.class);
 
   private static final String CHECK_LOGS = "\nCheck logs for more info.";
-  private static final String ABORTING = CHECK_LOGS + "\nAborting...\n";
+  private static final String ABORTING = CHECK_LOGS + "\nAborting...";
   private static final String NO_DETAIL = "[NO DETAIL GIVEN]";
 
   private static final Map<Path, BufferedWriter> outputFiles = new HashMap<>();
+  private static final Map<Path, Stream<String>> inputFiles = new HashMap<>();
 
   // Exit Codes
   public enum ExitStatus {
-    NO_ARGS(-1, "", ""),
+
+//    LOGGER.warn("[FAIL] - " + varErrMsg + " must be a number. Caused by: ", e);
+//      System.out.println("[FAIL] - " + varErrMsg + " argument must be a number. Try 'help' for more information.");
+//    exit(NUMBER_EXPECTED);
+    // should not get here
+    NO_ARGS(-1,
+        "[FAIL] - No arguments passed. Try 'help' for more information.",
+        "[FAIL] - No arguments passed. Try 'help' for more information."),
     NO_FILE(-2, "", ""),
-    BAD_N_ARGUMENTS(-3, "", ""),
-    BAD_ARGUMENT(-4, "", "[FAIL] - Invalid argument. Try 'help' for more information."),
+    BAD_N_ARGUMENTS(-3,
+            "[FAIL] - Bad number of arguments. Try 'help' for more information.",
+            "[FAIL] - Bad number of arguments. Try 'help' for more information."),
+    NUMBER_EXPECTED(-4,
+            "[FAIL] - {} must be a number. Caused by: {}",
+            "[FAIL] - Invalid argument. Try 'help' for more information." + ABORTING),
     NOT_A_FILE(-5, "", ""),
     UNEXPECTED_ERROR(-6, "", ""),
     BAD_FILE_FORMAT(-7, "", ""),
@@ -51,8 +61,14 @@ public class IOService {
                     "Particle b: {} ",
             "[FAIL] - Both particles of the system are at the same position." + ABORTING),
     COULD_NOT_OPEN_OUTPUT_FILE(-13,
-            "[FAIL] - Could not write output file: {}",
-            "[FAIL] - Could not write an output file." + ABORTING);
+            "[FAIL] - Could not open output file: {}",
+            "[FAIL] - Could not open an output file." + ABORTING),
+    COULD_NOT_OPEN_INPUT_FILE(-14,
+            "[FAIL] - Could not open input file: {}",
+            "[FAIL] - Could not open an input file." + ABORTING),
+    BAD_ARGUMENT(-15,
+            "[FAIL] - Invalid argument. Try 'help' for more information.",
+            "[FAIL] - Invalid argument. Try 'help' for more information.");
 
     private final int code;
     private final String loggerMsg;
@@ -96,6 +112,7 @@ public class IOService {
    * @param data data to be saved on the new file
    * @return the path to the just created file
    */
+  @SuppressWarnings("WeakerAccess")
   public static Path createFile(final String destFolder, final String file, final String data) {
     final File dataFolder = new File(destFolder);
     // tries to make directory
@@ -110,23 +127,12 @@ public class IOService {
     }
 
     if (data != null) {
-      if (!writeToFile(pathToFile, data)) {
+      if (!appendToFile(pathToFile, data)) {
         exit(WRITE_FILE_ERROR, null);
       }
     }
 
     return pathToFile;
-  }
-
-  /**
-   * Writes - not appends - {@code data} to the specified file
-   *
-   * @param pathToFile path to the file where data is going to be written
-   * @param data data to be written in file
-   * @return true if data could be written; false otherwise
-   */
-  public static boolean writeToFile(final Path pathToFile, final String data) {
-    return writeFile(pathToFile, data, false);
   }
 
   /**
@@ -137,7 +143,7 @@ public class IOService {
    * @return true if data could be appended; false otherwise
    */
   public static boolean appendToFile(final Path pathToFile, final String data) {
-    return writeFile(pathToFile, data, true);
+    return writeFile(pathToFile, data);
   }
 
   /**
@@ -186,7 +192,66 @@ public class IOService {
       }
     } catch (Exception ignored) {
     }
-}
+  }
+
+  public static boolean openInputFile(final Path pathToFile) {
+    try {
+      final Stream<String> reader = Files.lines(pathToFile);
+
+      // if here, there was no exception
+      inputFiles.put(pathToFile, reader);
+      return true; // file opened
+    } catch (final IOException e) {
+      return false; // file not opened
+    }
+  }
+
+  public static void closeInputFile(final Path pathToFile) {
+    final Stream<String> reader = inputFiles.remove(pathToFile);
+    try {
+      // close the writer regardless of what happens...
+      if (reader != null) {
+        reader.close();
+      }
+    } catch (Exception ignored) {
+    }
+  }
+
+  /**
+   * Parses as double the given string.
+   * Exits if an error is encountered
+   * @param s string to be parsed
+   * @param varErrMsg variable name to be displayed if an error raise
+   * @return the parsed double
+   */
+  public static double parseAsDouble(final String s, final String varErrMsg) {
+    try {
+      return Double.parseDouble(s);
+    } catch (NumberFormatException e) {
+      exit(NUMBER_EXPECTED, new Object[] { varErrMsg, e });
+      return -1;
+    }
+  }
+
+  /**
+   * Parses as int the given string.
+   * Exits if an error is encountered
+   * @param s string to be parsed
+   * @param varErrMsg variable name to be displayed if an error raise
+   * @return the parsed int
+   */
+  public static int parseAsInt(final String s, final String varErrMsg) {
+    try {
+      return Integer.parseInt(s);
+    } catch (NumberFormatException e) {
+      exit(NUMBER_EXPECTED, new Object[] { varErrMsg, e });
+      return -1;
+    }
+  }
+
+  public static Stream<String> readLines(final Path filePath) {
+    return inputFiles.get(filePath);
+  }
 
   // private methods
 
@@ -215,10 +280,9 @@ public class IOService {
    *
    * @param pathToFile path to the file where data is going to be written
    * @param data data to be written in file
-   * @param append whether data should be appended or not
    * @return true if data could be written; false otherwise
    */
-  private static boolean writeFile(final Path pathToFile, final String data, final boolean append) {
+  private static boolean writeFile(final Path pathToFile, final String data) {
     final BufferedWriter writer = outputFiles.get(pathToFile);
     try {
       writer.write(data);

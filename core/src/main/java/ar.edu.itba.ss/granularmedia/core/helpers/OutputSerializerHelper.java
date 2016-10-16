@@ -45,6 +45,28 @@ public class OutputSerializerHelper {
     return sb.toString();
   }
 
+  public static String staticOutput(final StaticData staticData) {
+    @SuppressWarnings("StringBufferReplaceableByString")
+    final StringBuilder sb = new StringBuilder();
+    sb      .append(staticData.N()).append(NL)
+            .append(staticData.width()).append(NL)
+            .append(staticData.length()).append(NL)
+            .append(staticData.diameterOpening()).append(NL)
+            .append(staticData.mass()).append(NL)
+            .append(staticData.kn()).append(NL)
+            .append(staticData.kt()).append(NL);
+    return sb.toString();
+  }
+
+  public static String dynamicOutput(final Collection<Particle> particles) {
+    final StringBuilder sb = new StringBuilder();
+    // system particles number
+    sb.append(particles.size()).append(NL);
+    // system's particles' data
+    serializeParticles(particles, sb);
+    return sb.toString();
+  }
+
   private Collection<Particle> generateOvitoBorderParticles(final double width, final double length) {
     final Collection<Particle> particles = new HashSet<>();
     final Particle leftBottomParticle = Particle.builder(0, 0).id(-4).type(BORDER).build();
@@ -60,8 +82,8 @@ public class OutputSerializerHelper {
     return particles;
   }
 
-  private StringBuilder serializeParticles(final Iterable<Particle> particles,
-                                                  final StringBuilder sb) {
+  private static StringBuilder serializeParticles(final Iterable<Particle> particles,
+                                           final StringBuilder sb) {
     for (Particle particle : particles) {
       final double[] color = chooseColor(particle);
 
@@ -71,9 +93,9 @@ public class OutputSerializerHelper {
     return sb;
   }
 
-  private StringBuilder serializeParticle(final Particle particle,
-                                        final double[] color,
-                                        final StringBuilder sb) {
+  private static StringBuilder serializeParticle(final Particle particle,
+                                          final double[] color,
+                                          final StringBuilder sb) {
     sb.append(
             // id
             particle.id()).append(SPLITTER)
@@ -89,13 +111,15 @@ public class OutputSerializerHelper {
             .append(color[B]).append(SPLITTER)
             // radio
             .append(particle.radio()).append(SPLITTER)
+            // mass
+            .append(particle.mass()).append(SPLITTER)
             // type
             .append(particle.type()).append(SPLITTER);
 
     return sb.append(NL);
   }
 
-  private double[] chooseColor(final Particle particle) {
+  private static double[] chooseColor(final Particle particle) {
     final double[] color = new double[3];
     switch (particle.type()) {
       case COMMON:

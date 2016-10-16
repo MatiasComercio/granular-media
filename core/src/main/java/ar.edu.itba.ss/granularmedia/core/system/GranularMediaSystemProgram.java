@@ -1,5 +1,6 @@
 package ar.edu.itba.ss.granularmedia.core.system;
 
+import ar.edu.itba.ss.granularmedia.core.helpers.InputSerializerHelper;
 import ar.edu.itba.ss.granularmedia.core.helpers.OutputSerializerHelper;
 import ar.edu.itba.ss.granularmedia.core.system.integration.GearGranularMediaSystem;
 import ar.edu.itba.ss.granularmedia.interfaces.MainProgram;
@@ -8,8 +9,6 @@ import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.models.StaticData;
 import ar.edu.itba.ss.granularmedia.models.Wall;
 import ar.edu.itba.ss.granularmedia.services.IOService;
-import ar.edu.itba.ss.granularmedia.services.RandomService;
-import ar.edu.itba.ss.granularmedia.services.factories.ParticleFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,29 +16,11 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
 
+import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.BAD_N_ARGUMENTS;
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.COULD_NOT_OPEN_OUTPUT_FILE;
-import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.VALIDATION_FAILED;
 
 public class GranularMediaSystemProgram implements MainProgram {
   private static final Logger LOGGER = LoggerFactory.getLogger(GranularMediaSystemProgram.class);
-
-  // system constants
-  private static final int N_PARTICLES = 100;
-  private static final double LENGTH = 5;
-  private static final double WIDTH = 3;
-  private static final double DIAMETER_OPENING = 2.99;
-  private static final double MASS = 0.01;
-  private static final double KN = 10e5;
-  private static final double KT = 2 * KN;
-  private static final double MIN_DIAMETER = DIAMETER_OPENING /7;
-  private static final double MAX_DIAMETER = DIAMETER_OPENING /5;
-  private static final double SIMULATION_TIME = 1;
-  private static final double DEFAULT_DELTA_1 = .1 * Math.sqrt(MASS/KN);
-  private static final double DELTA_1 = 1e-6;
-  private static final double DELTA_2 = 0.001;
-  // condition constants
-  private static final boolean OVERLAP_ALLOWED = false;
-  private static final int MAX_OVERLAP_TRIES = 100;
 
   // non-magic number constants
   private static final double ZERO = 0;
@@ -51,35 +32,59 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final double MS_TO_S = 1/1000.0;
   private static final double DELTA_LOG = 0.5;
 
+  // run args index
+  private static final int I_STATIC_DATA = 1;
+  private static final int I_DYNAMIC_DATA = 2;
+  private static final int I_SIMULATION_TIME = 3;
+  private static final int I_DELTA_1 = 4;
+  private static final int I_DELTA_2 = 5;
+  private static final int N_ARGS_EXPECTED = 6;
+
   @Override
   public void run(final String[] args) {
+    if (args.length < N_ARGS_EXPECTED) {
+      IOService.exit(BAD_N_ARGUMENTS, null);
+      // should never reach here
+      throw new IllegalStateException();
+    }
+
+    final StaticData staticData = loadStaticData(args);
+
     // system's particles
-    final Collection<Particle> systemParticles = initializeSystemParticles();
+    final Collection<Particle> systemParticles =
+            InputSerializerHelper.loadDynamicData(args[I_DYNAMIC_DATA]);
 
     // system's walls
-    final Collection<Wall> systemWalls = initializeSystemWalls(LENGTH, WIDTH, 0); // +++xmagicnumber
+    final Collection<Wall> systemWalls = initializeSystemWalls(staticData.length(), staticData.width(), 0); // +++xmagicnumber
 
     final TimeDrivenSimulationSystem granularMediaSystem =
-            new GearGranularMediaSystem(systemParticles, systemWalls, KN, KT, LENGTH, WIDTH);
-
-    // static data
-    final StaticData staticData =
-            StaticData.builder(N_PARTICLES, WIDTH, LENGTH, 0, SIMULATION_TIME).build(); // +++xmagicnumber
+            new GearGranularMediaSystem(systemParticles, systemWalls,
+                    staticData.kn(), staticData.kt(), staticData.length(), staticData.width());
 
     // helper to write ovito file
     final OutputSerializerHelper outputSerializerHelper = new OutputSerializerHelper(staticData);
 
     // default delta time
-    final double dt = Math.min(DEFAULT_DELTA_1, DELTA_1);
+    final double defaultDelta1 = .1 * Math.sqrt(staticData.mass()/staticData.kn());
+    final double dt = Math.min(defaultDelta1, staticData.delta1());
     LOGGER.info("Chosen dt: {}s", dt);
 
     // simulation itself
     LOGGER.info("Starting simulation...");
-    startSimulation(granularMediaSystem, dt, staticData.simulationTime(), DELTA_2, outputSerializerHelper);
+    startSimulation(granularMediaSystem, dt, staticData.simulationTime(), staticData.delta2(), outputSerializerHelper);
     LOGGER.info("[FINISHED]");
   }
 
   // private
+  private StaticData loadStaticData(final String[] args) {
+    final StaticData staticData = InputSerializerHelper.loadStaticFile(args[I_STATIC_DATA]);
+    final double simulationTime = IOService.parseAsDouble(args[I_SIMULATION_TIME], "<simulation_time>");
+    final double delta1 = IOService.parseAsDouble(args[I_DELTA_1], "<delta_1>");
+    final double delta2 = IOService.parseAsDouble(args[I_DELTA_2], "<delta_2>");
+
+    return staticData.withSimulationTime(simulationTime).withDelta1(delta1).withDelta2(delta2);
+  }
+
   private void startSimulation(final TimeDrivenSimulationSystem granularMediaSystem,
                                final double dt, final double simulationTime, final double delta2,
                                final OutputSerializerHelper outputSerializerHelper) {
@@ -114,31 +119,6 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double endTime = System.currentTimeMillis();
     final double simulationDuration = endTime - startTime;
     LOGGER.info("Total simulation time: {} s", simulationDuration * MS_TO_S);
-  }
-
-  private Collection<Particle> initializeSystemParticles() {
-    final ParticleFactory particleFactory = ParticleFactory.getInstance();
-
-    if (!validParametersRange(LENGTH, WIDTH, DIAMETER_OPENING)) {
-      IOService.exit(VALIDATION_FAILED, "length > width > diameterOpening");
-    }
-
-    final double[] radios = new double[N_PARTICLES];
-    double diameter;
-    for (int i = 0  ; i < N_PARTICLES ; i++) {
-      diameter = randomDiameter();
-      radios[i] = diameter/2;
-    }
-
-    final Particle leftBottomParticle = particleFactory.create(ZERO, ZERO);
-    final Particle rightTopParticle = particleFactory.create(WIDTH + ZERO, LENGTH + ZERO);
-
-    return particleFactory.randomPoints(
-            leftBottomParticle,
-            rightTopParticle,
-            radios, MASS,
-            OVERLAP_ALLOWED,
-            MAX_OVERLAP_TRIES);
   }
 
   private Collection<Wall> initializeSystemWalls(final double length,
@@ -194,15 +174,5 @@ public class GranularMediaSystemProgram implements MainProgram {
                              final OutputSerializerHelper outputSerializerHelper) {
     final String ovitoOutputData = outputSerializerHelper.ovitoOutput(particleSet, iteration);
     IOService.appendToFile(ovitoFilePath, ovitoOutputData);
-  }
-
-  private boolean validParametersRange(final double length,
-                                       final double width,
-                                       final double diameterOpening) {
-    return length > width && width > diameterOpening;
-  }
-
-  private double randomDiameter() {
-    return RandomService.randomDouble(MIN_DIAMETER, MAX_DIAMETER);
   }
 }
