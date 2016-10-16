@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -76,9 +77,9 @@ public class GranularMediaSystemProgram implements MainProgram {
     System.out.printf("Chosen dt: %es\n", dt);
 
     // simulation itself
-    System.out.println("Starting simulation...");
+    System.out.println("Running simulation...");
     startSimulation(granularMediaSystem, dt, staticData.simulationTime(), staticData.delta2(), outputSerializerHelper);
-    System.out.println("[FINISHED]");
+    System.out.println("[DONE]");
   }
 
   // private
@@ -108,7 +109,8 @@ public class GranularMediaSystemProgram implements MainProgram {
                 granularMediaSystem.getSystemData().particles(),
                 step++, outputSerializerHelper);
         if (currentTime >= (DELTA_LOG * logStep)) {
-          System.out.printf("\tCurrent time: %f ; Simulation Time: %f ; Step: %d\n", currentTime, simulationTime, step);
+          System.out.printf("\tClock: %s; Current simulation time: %f ; Final simulation time: %f\n",
+                  LocalDateTime.now(), currentTime, simulationTime);
           logStep ++;
         }
       }
@@ -125,6 +127,7 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double endTime = System.currentTimeMillis();
     final double simulationDuration = endTime - startTime;
     LOGGER.info("Total simulation time: {} s", simulationDuration * MS_TO_S);
+    System.out.printf("Total simulation time: %f s\n", simulationDuration * MS_TO_S);
   }
 
   /*

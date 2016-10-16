@@ -12,6 +12,7 @@ import ar.edu.itba.ss.granularmedia.services.RandomService;
 import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
 import ar.edu.itba.ss.granularmedia.services.gear.Gear5SystemData;
 import ar.edu.itba.ss.granularmedia.services.gear.GearPredictorCorrector;
+import ar.edu.itba.ss.granularmedia.services.neighboursfinders.BruteForceMethodImpl;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.CellIndexMethodImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +92,8 @@ public class GearGranularMediaSystem implements TimeDrivenSimulationSystem {
       this.fallLength = fallLength;
       this.respawnLength = respawnLength;
       this.walls = walls;
-      this.neighboursFinder = new CellIndexMethodImpl();
+//      this.neighboursFinder = new CellIndexMethodImpl(); +++xdebug
+      this.neighboursFinder = new BruteForceMethodImpl();
       this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
       this.respawnQueue = new LinkedList<>();
 

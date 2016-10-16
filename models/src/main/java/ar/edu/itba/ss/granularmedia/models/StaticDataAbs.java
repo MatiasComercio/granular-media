@@ -24,12 +24,12 @@ public abstract class StaticDataAbs {
 
   @Value.Derived
   public double minDiameter() {
-    return diameterOpening() / 7;
+    return diameterOpening() == 0 ?  width() / 21 : diameterOpening() / 7;
   }
 
   @Value.Derived
   public double maxDiameter() {
-    return diameterOpening() / 5;
+    return diameterOpening() == 0 ?  width() / 15 : diameterOpening() / 5;
   }
 
   @Builder.Parameter
