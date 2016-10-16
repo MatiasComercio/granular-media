@@ -154,6 +154,14 @@ import static java.lang.Math.pow;
   }
 
   /**
+   * Flags the given {@code particle} to be removed when the current gear predictor corrector step has finished
+   * @param particle the particle to be removed from the system
+   */
+  protected void removeWhenFinish(final Particle particle) {
+    particlesToRemove.add(particle);
+  }
+
+  /**
    * Execute some statements before prediction step
    */
   @SuppressWarnings("WeakerAccess")
@@ -165,24 +173,8 @@ import static java.lang.Math.pow;
    * Execute some statements just after prediction step for the given particle
    */
   @SuppressWarnings("WeakerAccess")
-  public void predicted(@SuppressWarnings("UnusedParameters") final Particle predictedParticle) {
+  protected void predicted(@SuppressWarnings("UnusedParameters") final Particle predictedParticle) {
 
-  }
-
-  /**
-   * Execute some statements just after fix step for the given particle
-   */
-  @SuppressWarnings("WeakerAccess")
-  public void fixed(@SuppressWarnings("UnusedParameters") final Particle particle) {
-
-  }
-
-  /**
-   * Flags the given {@code particle} to be removed when all the gear predictor corrector step has finished
-   * @param particle the particle to be removed from the system
-   */
-  protected void removeWhenFinish(final Particle particle) {
-    particlesToRemove.add(particle);
   }
 
   /**
@@ -190,7 +182,7 @@ import static java.lang.Math.pow;
    */
   @SuppressWarnings("WeakerAccess")
   protected void postPredict() {
-
+    removeParticles();
   }
 
   /**
@@ -206,7 +198,7 @@ import static java.lang.Math.pow;
    */
   @SuppressWarnings({"WeakerAccess", "unused"})
   protected void postEvaluate() {
-
+    removeParticles();
   }
 
   /**
@@ -218,11 +210,18 @@ import static java.lang.Math.pow;
   }
 
   /**
+   * Execute some statements just after fix step for the given particle
+   */
+  protected void fixed(@SuppressWarnings("UnusedParameters") final Particle particle) {
+
+  }
+
+  /**
    * Execute some statements after evaluate step
    */
   @SuppressWarnings("WeakerAccess")
   protected void postFix() {
-    particlesToRemove.forEach(this::remove);
+    removeParticles();
   }
 
   /* package-private */
@@ -356,12 +355,20 @@ import static java.lang.Math.pow;
     return factorial;
   }
 
+  private void removeParticles() {
+    for (Iterator<Particle> iterator = particlesToRemove.iterator(); iterator.hasNext();) {
+      remove(iterator.next());
+      iterator.remove();
+    }
+  }
+
   /**
    * Removes the given {@code particle} from all the system's maps
    * @param particle the particle to be removed
    */
   private void remove(final Particle particle) {
     particles.remove(particle);
+    predictedParticles.remove(particle);
     predictedRs.remove(particle);
     currentRs.remove(particle);
   }

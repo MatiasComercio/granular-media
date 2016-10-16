@@ -12,6 +12,7 @@ import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
 import ar.edu.itba.ss.granularmedia.services.gear.Gear5SystemData;
 import ar.edu.itba.ss.granularmedia.services.gear.GearPredictorCorrector;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.BruteForceMethodImpl;
+import ar.edu.itba.ss.granularmedia.services.neighboursfinders.CellIndexMethodImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,8 +70,11 @@ public class GearGranularMediaSystem
     private final double kt;
     private final double length;
     private final double width;
-    private final double fallLength;
-    private final double respawnLength;
+    private final double respawnMinX;
+    private final double respawnMaxX;
+    private final double respawnMinY;
+    private final double respawnMaxY;
+
     private final int M1;
     private final int M2;
 
@@ -82,19 +86,24 @@ public class GearGranularMediaSystem
 
     private Gear5GranularMediaSystemData(final Collection<Particle> particles,
                                          final Collection<Wall> walls, final double kn, final double kt,
-                                         final double length, final double width, final double fallLength, final double respawnLength) {
+                                         final double length, final double width, final double fallLength,
+                                         final double respawnLength) {
       super(particles);
       this.kn = kn;
       this.kt = kt;
       this.length = length;
       this.width = width;
-      this.fallLength = fallLength;
-      this.respawnLength = respawnLength;
       this.walls = Collections.unmodifiableCollection(walls);
-//      this.neighboursFinder = new CellIndexMethodImpl(); +++xdebug
-      this.neighboursFinder = new BruteForceMethodImpl();
+//      this.neighboursFinder = new CellIndexMethodImpl();
+      this.neighboursFinder = new BruteForceMethodImpl(); // +++xdebug
       this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
       this.respawnQueue = new LinkedList<>();
+
+      this.respawnMinX = ZERO;
+      this.respawnMaxX = respawnMinX + width;
+
+      this.respawnMinY = fallLength + length;
+      this.respawnMaxY = respawnMinY + respawnLength;
 
       final double maxRadius = initAndGetMaxRadio();
       final double condition1 = length / (RC + 2 * maxRadius); // M1 condition for cell index
@@ -149,11 +158,24 @@ public class GearGranularMediaSystem
     }
 
     @Override
-    public void fixed(@SuppressWarnings("UnusedParameters") final Particle particle) {
-      if(particle.y() < fallLength){
+    public void predicted(final Particle predictedParticle) {
+      // it is assumed that if the predicted particle.y() is < ZERO => the particle will be out soon =>
+      // => we remove that particle before evaluation for simplification on neighbours finder method usage
+      removeIfOut(predictedParticle);
+
+      super.predicted(predictedParticle);
+    }
+
+    private void removeIfOut(final Particle particle) {
+      if(particle.y() < ZERO){
         respawnQueue.add(particle);
         removeWhenFinish(particle);
       }
+    }
+
+    @Override
+    public void fixed(final Particle particle) {
+      removeIfOut(particle);
 
       super.fixed(particle);
     }
@@ -162,12 +184,6 @@ public class GearGranularMediaSystem
     @Override
     protected void postFix() {
       super.postFix();
-
-      final double respawnMinX = ZERO;
-      final double respawnMaxX = respawnMinX + width;
-
-      final double respawnMinY = fallLength + length;
-      final double respawnMaxY = respawnMinX + respawnLength;
 
       // idea from: http://stackoverflow.com/questions/223918/iterating-through-a-collection-avoiding-concurrentmodificationexception-when-re
       for (Iterator<Particle> iterator = respawnQueue.iterator(); iterator.hasNext();) {
