@@ -15,8 +15,8 @@ import java.util.Collection;
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.*;
 
 public class GenerateDynamicFileProgram implements MainProgram {
-  // system's specific parameters
-  private static final double FALL_LENGTH = 1.5; // Length of the area where particles fall out of the silo
+  // system's specific parameters //+++xcheck: repeated variable at GranularMediaSystemProgram
+  private static final double FALL_LENGTH = 1; // Length of the area where particles fall out of the silo
 
   // condition constants
   private static final boolean OVERLAP_ALLOWED = false;

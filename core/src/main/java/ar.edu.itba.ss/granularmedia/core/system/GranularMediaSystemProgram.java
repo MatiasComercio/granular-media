@@ -23,7 +23,7 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final Logger LOGGER = LoggerFactory.getLogger(GranularMediaSystemProgram.class);
 
   // system's specific parameters
-  private static final double FALL_LENGTH = 1.5; // Length of the area where particles fall out of the silo
+  private static final double FALL_LENGTH = 1; // Length of the area where particles fall out of the silo
   private static final double RESPAWN_LENGTH = 1.5; // Length of the area where particles respawn
 
   // non-magic number constants
@@ -127,12 +127,32 @@ public class GranularMediaSystemProgram implements MainProgram {
     LOGGER.info("Total simulation time: {} s", simulationDuration * MS_TO_S);
   }
 
+  /*
+                             |                      |                              |
+                             |      RESPAWN_LENGTH  |                              |
+                             |                     _|                              |_
+                             |                      |                              |
+                             |                      |                              |
+        totalSystemLength    |      length          |                              |
+                             |                      |                              |
+                             |                     _|___________        ___________|_
+                             |                      |        diameterOpening       |
+                             |      FALL_LENGTH     |                              |
+                             |                     _|                              |
+                                                    --------------------------------
+                                                                    |
+                                                                  width
+
+   */
   private Collection<Wall> initializeSystemWalls(final double length,
                                                  final double width,
                                                  final double diameterOpening) {
     final Collection<Wall> systemWalls = new HashSet<>();
-    final Wall leftVerticalWall = Wall.builder(ZERO, ZERO, ZERO, length).build();
-    final Wall rightVerticalWall = Wall.builder(width, ZERO, width, length).build();
+
+    final double totalSystemLength = FALL_LENGTH + length + RESPAWN_LENGTH;
+
+    final Wall leftVerticalWall = Wall.builder(ZERO, ZERO, ZERO, totalSystemLength).build();
+    final Wall rightVerticalWall = Wall.builder(width, ZERO, width, totalSystemLength).build();
 
     final double horizontalWallWidth = (width-diameterOpening) / 2;
 
