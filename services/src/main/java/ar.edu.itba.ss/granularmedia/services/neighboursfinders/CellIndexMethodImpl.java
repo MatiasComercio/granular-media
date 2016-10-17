@@ -107,7 +107,11 @@ public class CellIndexMethodImpl implements NeighboursFinder {
 
       // put each particle on the corresponding cell of the cell's matrix
       // save the cell as a non empty one, to analyse it later
-      nonEmptyCells.add(saveToMatrix(length, width, m1, m2, particle, cellMatrix));
+      try { // +++xdebug
+        nonEmptyCells.add(saveToMatrix(length, width, m1, m2, particle, cellMatrix));
+      } catch (Exception e) {
+        throw e;
+      }
     }
 
     // run the cell index method itself

@@ -22,7 +22,6 @@ import java.util.*;
 
 public class GearGranularMediaSystem
         implements TimeDrivenSimulationSystem<Gear5GranularMediaSystemData> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(Gear5GranularMediaSystemData.class);
   private static final double G = 9.80665;
 
   private final NumericIntegrationMethod<Gear5SystemData> integrationMethod;

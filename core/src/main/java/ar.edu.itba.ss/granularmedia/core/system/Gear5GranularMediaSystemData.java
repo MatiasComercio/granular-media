@@ -6,14 +6,17 @@ import ar.edu.itba.ss.granularmedia.models.StaticData;
 import ar.edu.itba.ss.granularmedia.models.Vector2D;
 import ar.edu.itba.ss.granularmedia.models.Wall;
 import ar.edu.itba.ss.granularmedia.services.IOService;
-import ar.edu.itba.ss.granularmedia.services.RandomService;
 import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
 import ar.edu.itba.ss.granularmedia.services.gear.Gear5SystemData;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.CellIndexMethodImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class Gear5GranularMediaSystemData extends Gear5SystemData {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Gear5GranularMediaSystemData.class);
+
   private static final double G = 9.80665;
   private static final double RC = 0;
   private static final boolean PERIODIC_LIMIT = false;
@@ -197,6 +200,16 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
 
   private Vector2D neighbourForce(final Particle particle, final Particle neighbour) {
     final double superposition = Space2DMaths.superpositionBetween(particle, neighbour);
+    if (superposition < 0) { // FIXME: ENTERING HERE
+      LOGGER.warn("BAD CALCULATION OF NEIGHBOURS: SUPERPOSITION IS NEGATIVE");
+      return Space2DMaths.nullVector();
+    }
+
+    if (particle.equals(neighbour)) { // +++xdebug
+      LOGGER.warn("BAD CALCULATION OF NEIGHBOURS: particle == NEIGHBOUR");
+      return Space2DMaths.nullVector();
+    }
+
 
     final Vector2D[] normalAndTangentialVersors =
             Space2DMaths.normalAndTangentialVersors(particle.r0(), neighbour.r0());
