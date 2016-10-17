@@ -1,5 +1,6 @@
 package ar.edu.itba.ss.granularmedia.core.system;
 
+import ar.edu.itba.ss.granularmedia.core.Main;
 import ar.edu.itba.ss.granularmedia.interfaces.NeighboursFinder;
 import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.models.StaticData;
@@ -8,6 +9,7 @@ import ar.edu.itba.ss.granularmedia.models.Wall;
 import ar.edu.itba.ss.granularmedia.services.IOService;
 import ar.edu.itba.ss.granularmedia.services.apis.Space2DMaths;
 import ar.edu.itba.ss.granularmedia.services.gear.Gear5SystemData;
+import ar.edu.itba.ss.granularmedia.services.neighboursfinders.BruteForceMethodImpl;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.CellIndexMethodImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,6 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
     this.kt = staticData.kt();
 
     this.walls = Collections.unmodifiableCollection(walls);
-//      this.neighboursFinder = new BruteForceMethodImpl(PERIODIC_LIMIT, RC); // +++xdebug
     this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
     this.respawnQueue = new LinkedList<>();
 
@@ -67,18 +68,21 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
     final double condition2 = width / (RC + 2 * maxRadius); // M2 condition for cell index
 
     int m1, m2;
-    if (condition1 == Math.floor(condition1)) { // In case condition1 is an "integer" value
+    if (condition1 == Math.floor(condition1)) { // In case condition1 is an "integer" value FIXME: NEVER COMPARE doubles with ==
       m1 = ((int)Math.floor(condition1)) - 1; // This is done to make sure M1 is strictly lesser than condition1
     } else {
       m1 = (int) Math.floor(condition1);
     }
-    if (condition2 == Math.floor(condition2)) { // In case condition2 is an "integer" value
+    if (condition2 == Math.floor(condition2)) { // In case condition2 is an "integer" value FIXME: NEVER COMPARE doubles with ==
       m2 = ((int)Math.floor(condition2)) - 1; // This is done to make sure M2 is strictly lesser than condition2
     } else {
       m2 = (int) Math.floor(condition2);
     }
 
-    this.neighboursFinder = new CellIndexMethodImpl(totalSystemLength, width, m1, m2, RC, PERIODIC_LIMIT);
+    final int m = Math.min(m1, m2) - 1;
+
+    this.neighboursFinder = new BruteForceMethodImpl(PERIODIC_LIMIT, RC); // +++xdebug
+//    this.neighboursFinder = new CellIndexMethodImpl(totalSystemLength, width, m, m, RC, PERIODIC_LIMIT);
   }
 
   public Collection<Wall> walls() {
@@ -299,6 +303,7 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
   private static class RespawnArea {
     private final Deque<Cell> emptyCells;
     private final Map<Particle, Cell> fullCells;
+    private final double cellSize;
 
     private RespawnArea(final double respawnMinX, final double respawnMaxX,
                         final double respawnMinY, final double respawnMaxY,
@@ -307,12 +312,12 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
       this.emptyCells = new LinkedList<>();
       this.fullCells = new HashMap<>();
 
-      final double cellSize = (1.1 * maxRadius);
-      final double yCells = (respawnMaxY + respawnMinY) / 2;
+      final double diameter = 2 * maxRadius;
+      this.cellSize = (1.1 * diameter);
+      final double yCells = (respawnMaxY + respawnMinY) / 2; // +++ximprove this respawnLength can be set on the staticData
 
-      for (double i = respawnMinX; i < respawnMaxX ; i += cellSize) {
-        final double x = (i + cellSize) / 2;
-        emptyCells.add(new Cell(x, yCells));
+      for (double i = respawnMinX + cellSize/2; i < respawnMaxX - cellSize/2 ; i += cellSize) {
+        emptyCells.add(new Cell(i, yCells));
       }
     }
 
@@ -337,8 +342,9 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
       }
 
       // particle was respawned recently
-      if (particle.y() < cell.y) { // out of respawn area
+      if (particle.y() < cell.y - cellSize) { // out of respawn area
         fullCells.remove(particle);
+        emptyCells.add(cell);
       }
     }
 
