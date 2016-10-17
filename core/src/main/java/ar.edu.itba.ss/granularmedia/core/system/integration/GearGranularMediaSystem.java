@@ -4,6 +4,7 @@ import ar.edu.itba.ss.granularmedia.interfaces.NeighboursFinder;
 import ar.edu.itba.ss.granularmedia.interfaces.NumericIntegrationMethod;
 import ar.edu.itba.ss.granularmedia.interfaces.TimeDrivenSimulationSystem;
 import ar.edu.itba.ss.granularmedia.models.Particle;
+import ar.edu.itba.ss.granularmedia.models.StaticData;
 import ar.edu.itba.ss.granularmedia.models.Vector2D;
 import ar.edu.itba.ss.granularmedia.models.Wall;
 import ar.edu.itba.ss.granularmedia.services.IOService;
@@ -27,8 +28,7 @@ public class GearGranularMediaSystem
   private final Gear5GranularMediaSystemData systemData;
 
   public GearGranularMediaSystem(final Collection<Particle> systemParticles,
-                                 final Collection<Wall> systemWalls, final double kn, final double kt,
-                                 final double L, final double W, final double fallLength, final double respawnLength) {
+                                 final Collection<Wall> systemWalls, final StaticData staticData) {
     final Collection<Particle> updatedSystemParticles = new HashSet<>(systemParticles.size());
     systemParticles.forEach(particle -> {
       final Particle updatedParticle = particle.withForceY(-particle.mass() * G);
@@ -37,8 +37,7 @@ public class GearGranularMediaSystem
 
     // Notice length is the whole system's length (silo's length + fallLength + respawnLength) and not
     // simply the silo's length
-    this.systemData = new Gear5GranularMediaSystemData(updatedSystemParticles, systemWalls,
-            kn, kt, L, W, fallLength, respawnLength);
+    this.systemData = new Gear5GranularMediaSystemData(updatedSystemParticles, systemWalls, staticData);
     this.integrationMethod = new GearPredictorCorrector<>();
   }
 
@@ -68,6 +67,7 @@ public class GearGranularMediaSystem
 
     private final double kn;
     private final double kt;
+    private final double totalSystemLength;
     private final double length;
     private final double width;
     private final double respawnMinX;
@@ -85,25 +85,24 @@ public class GearGranularMediaSystem
     private Map<Particle, Collection<Particle>> currentNeighbours;
 
     private Gear5GranularMediaSystemData(final Collection<Particle> particles,
-                                         final Collection<Wall> walls, final double kn, final double kt,
-                                         final double length, final double width, final double fallLength,
-                                         final double respawnLength) {
+                                         final Collection<Wall> walls, final StaticData staticData) {
       super(particles);
-      this.kn = kn;
-      this.kt = kt;
-      this.length = length;
-      this.width = width;
+      this.kn = staticData.kn();
+      this.kt = staticData.kt();
+      this.totalSystemLength = staticData.totalSystemLength();
+      this.length = staticData.length();
+      this.width = staticData.width();
       this.walls = Collections.unmodifiableCollection(walls);
-//      this.neighboursFinder = new CellIndexMethodImpl();
-      this.neighboursFinder = new BruteForceMethodImpl(); // +++xdebug
+      this.neighboursFinder = new CellIndexMethodImpl();
+//      this.neighboursFinder = new BruteForceMethodImpl(); // +++xdebug
       this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
       this.respawnQueue = new LinkedList<>();
 
       this.respawnMinX = ZERO;
       this.respawnMaxX = respawnMinX + width;
 
-      this.respawnMinY = fallLength + length;
-      this.respawnMaxY = respawnMinY + respawnLength;
+      this.respawnMinY = staticData.fallLength() + length;
+      this.respawnMaxY = respawnMinY + staticData.respawnLength();
 
       final double maxRadius = initAndGetMaxRadio();
       final double condition1 = length / (RC + 2 * maxRadius); // M1 condition for cell index
@@ -153,7 +152,8 @@ public class GearGranularMediaSystem
       Particle.setMaxPressure(0);
 
       // calculate neighbours with the system's particles updated with the predicted values
-      this.currentNeighbours = neighboursFinder.run(predictedParticles(), length, width, M1, M2, RC, PERIODIC_LIMIT);
+      this.currentNeighbours
+              = neighboursFinder.run(predictedParticles(), totalSystemLength, width, M1, M2, RC, PERIODIC_LIMIT);
       super.preEvaluate();
     }
 

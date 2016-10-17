@@ -60,9 +60,7 @@ public class GranularMediaSystemProgram implements MainProgram {
     final Collection<Wall> systemWalls = initializeSystemWalls(staticData);
 
     final TimeDrivenSimulationSystem<Gear5GranularMediaSystemData> granularMediaSystem =
-            new GearGranularMediaSystem(systemParticles, systemWalls,
-                    staticData.kn(), staticData.kt(), staticData.length(), staticData.width(),
-                    staticData.fallLength(), staticData.respawnLength());
+            new GearGranularMediaSystem(systemParticles, systemWalls, staticData);
 
     // helper to write ovito file
     final OutputSerializerHelper outputSerializerHelper = new OutputSerializerHelper(staticData);
@@ -71,6 +69,8 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double defaultDelta1 = .1 * Math.sqrt(staticData.mass()/staticData.kn());
     final double dt = Math.min(defaultDelta1, staticData.delta1());
     System.out.printf("Chosen dt: %es\n", dt);
+    System.out.println(staticData);
+    System.out.println("Real system particles: " + systemParticles.size());
 
     // simulation itself
     System.out.println("Running simulation...");

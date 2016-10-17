@@ -31,7 +31,10 @@ public class CellIndexMethodImpl implements NeighboursFinder {
 
 
   @Override
-  public Map<Particle, Collection<Particle>> run(final Collection<Particle> particles, final double L, final double W, final int M1, final int M2, final double rc, final boolean periodicLimit) {
+  public Map<Particle, Collection<Particle>> run(final Collection<Particle> particles,
+                                                 final double L, final double W,
+                                                 final int M1, final int M2,
+                                                 final double rc, final boolean periodicLimit) {
     // check M conditions
 
     if (M1 <= 0 || M2<=0 || rc < 0 || L <= 0 || W<=0) {
