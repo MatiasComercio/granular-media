@@ -23,7 +23,6 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
 
   private static final int VELOCITY_DERIVED_ORDER = 1;
 
-  private static final int RESPAWN_MAX_TRIES = 5;
   private static final double ZERO = 0; // +++xcheck: repeated variable in other clases
 
   private final double kn;
