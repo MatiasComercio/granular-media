@@ -63,7 +63,7 @@ public class GearGranularMediaSystem
     private static final int VELOCITY_DERIVED_ORDER = 1;
 
     private static final int RESPAWN_MAX_TRIES = 5;
-    private static final double ZERO = 0; // +++xcheck: repeated variable in other calses
+    private static final double ZERO = 0; // +++xcheck: repeated variable in other clases
 
     private final double kn;
     private final double kt;
@@ -72,9 +72,6 @@ public class GearGranularMediaSystem
     private final double respawnMaxX;
     private final double respawnMinY;
     private final double respawnMaxY;
-
-    private final int M1;
-    private final int M2;
 
     private final Collection<Wall> walls;
     private final NeighboursFinder neighboursFinder;
@@ -106,18 +103,19 @@ public class GearGranularMediaSystem
       final double condition1 = totalSystemLength / (RC + 2 * maxRadius); // M1 condition for cell index
       final double condition2 = width / (RC + 2 * maxRadius); // M2 condition for cell index
 
+      int m1, m2;
       if (condition1 == Math.floor(condition1)) { // In case condition1 is an "integer" value
-        this.M1 = ((int)Math.floor(condition1)) - 1; // This is done to make sure M1 is strictly lesser than condition1
+        m1 = ((int)Math.floor(condition1)) - 1; // This is done to make sure M1 is strictly lesser than condition1
       } else {
-        this.M1 = (int) Math.floor(condition1);
+        m1 = (int) Math.floor(condition1);
       }
       if (condition2 == Math.floor(condition2)) { // In case condition2 is an "integer" value
-        this.M2 = ((int)Math.floor(condition2)) - 1; // This is done to make sure M2 is strictly lesser than condition2
+        m2 = ((int)Math.floor(condition2)) - 1; // This is done to make sure M2 is strictly lesser than condition2
       } else {
-        this.M2 = (int) Math.floor(condition2);
+        m2 = (int) Math.floor(condition2);
       }
 
-      this.neighboursFinder = new CellIndexMethodImpl(totalSystemLength, width, M1, M2, RC, PERIODIC_LIMIT);
+      this.neighboursFinder = new CellIndexMethodImpl(totalSystemLength, width, m1, m2, RC, PERIODIC_LIMIT);
     }
 
     public Collection<Wall> walls() {

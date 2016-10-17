@@ -390,7 +390,7 @@ public class CellIndexMethodImpl implements NeighboursFinder {
   }
 
   private static class CellMatrix {
-    private final Cell[][] matrix;
+    private final Map<Integer, Map<Integer, Cell>> matrix;
     private final int rows;
     private final int cols;
 
@@ -398,12 +398,7 @@ public class CellIndexMethodImpl implements NeighboursFinder {
     private CellMatrix(final int rows, final int cols) {
       this.rows = rows;
       this.cols = cols;
-      this.matrix = new Cell[rows][cols];
-      for (int row = 0 ; row < rows ; row ++) {
-        for (int col = 0 ; col < cols ; col ++) {
-          matrix[row][col] = new Cell(row, col);
-        }
-      }
+      this.matrix = new HashMap<>();
     }
 
     /**
@@ -415,7 +410,16 @@ public class CellIndexMethodImpl implements NeighboursFinder {
      * @throws IndexOutOfBoundsException if row or col is lower than 0 or equal or greater than matrix's dimension
      */
     private Cell get(final int row, final int col) {
-      return matrix[row][col];
+      validate(row, col);
+      final Map<Integer, Cell> cells =  matrix.computeIfAbsent(row, aRow -> new HashMap<>());
+      return cells.computeIfAbsent(col, aCol -> new Cell(row, col));
+    }
+
+    private void validate(final int row, final int col) {
+      if (row < 0 || row >= rows || col < 0 || col >= cols) {
+        LOGGER.error("row: {}, col: {}, maxRow: {}, maxCol: {}", row, col, rows, cols);
+        throw new ArrayIndexOutOfBoundsException();
+      }
     }
 
     /**

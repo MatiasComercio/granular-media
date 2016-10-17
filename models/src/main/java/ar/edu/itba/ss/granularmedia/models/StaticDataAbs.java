@@ -76,12 +76,14 @@ public abstract class StaticDataAbs {
 
   @Value.Derived
   public double fallLength() {
-    return 1; // Length of the area where particles fall out of the silo
+    // +++xcheck
+    return length()/10; // Length of the area where particles fall out of the silo
   }
 
   @Value.Derived
   public double respawnLength() {
-    return 1; // Length of the area where particles respawn
+    // +++xcheck
+    return length()/10; // Length of the area where particles respawn
   }
 
   @Value.Derived

@@ -32,7 +32,7 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final String DEFAULT_OUTPUT_FOLDER = "output";
   private static final String DEFAULT_OVITO_FILE_NAME = "ovito";
   private static final double MS_TO_S = 1/1000.0;
-  private static final double DELTA_LOG = 0.5;
+  private static final double DELTA_LOG = 0.025;
 
   // run args index
   private static final int I_STATIC_DATA = 1;
@@ -105,11 +105,12 @@ public class GranularMediaSystemProgram implements MainProgram {
                 granularMediaSystem.getSystemData().particles(),
                 granularMediaSystem.getSystemData().walls(),
                 step++, outputSerializerHelper);
-        if (currentTime >= (DELTA_LOG * logStep)) {
-          System.out.printf("\tClock: %s; Current simulation time: %f ; Final simulation time: %f\n",
-                  LocalDateTime.now(), currentTime, simulationTime);
-          logStep ++;
-        }
+      }
+
+      if (currentTime >= (DELTA_LOG * logStep)) {
+        System.out.printf("\tClock: %s; Current simulation time: %f ; Final simulation time: %f\n",
+                LocalDateTime.now(), currentTime, simulationTime);
+        logStep ++;
       }
 
       // evolve system
