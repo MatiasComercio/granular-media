@@ -3,7 +3,6 @@ package ar.edu.itba.ss.granularmedia.core.system;
 import ar.edu.itba.ss.granularmedia.core.helpers.InputSerializerHelper;
 import ar.edu.itba.ss.granularmedia.core.helpers.OutputSerializerHelper;
 import ar.edu.itba.ss.granularmedia.core.system.integration.GearGranularMediaSystem;
-import ar.edu.itba.ss.granularmedia.core.system.integration.GearGranularMediaSystem.Gear5GranularMediaSystemData;
 import ar.edu.itba.ss.granularmedia.interfaces.MainProgram;
 import ar.edu.itba.ss.granularmedia.interfaces.TimeDrivenSimulationSystem;
 import ar.edu.itba.ss.granularmedia.models.Particle;
