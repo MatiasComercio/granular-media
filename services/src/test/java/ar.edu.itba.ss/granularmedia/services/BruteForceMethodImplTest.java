@@ -4,7 +4,6 @@ import ar.edu.itba.ss.granularmedia.interfaces.NeighboursFinder;
 import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.BruteForceMethodImpl;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
@@ -13,7 +12,9 @@ public class BruteForceMethodImplTest {
     private final NeighboursFinder bruteForceMethod;
 
     public BruteForceMethodImplTest() {
-        bruteForceMethod = new BruteForceMethodImpl();
+        final double rc = 1.5;
+        final boolean periodicLimit = false;
+        bruteForceMethod = new BruteForceMethodImpl(periodicLimit, rc);
     }
 
     @Test
@@ -33,13 +34,7 @@ public class BruteForceMethodImplTest {
         points.add(p4);
         points.add(p5);
 
-        final double L = 6d;
-        final double W = 6d;
-        final int M = 2;
-        final double rc = 1.5;
-        final boolean periodicLimit = false;
-
-        final Map<Particle, Collection<Particle>> processedPoints = bruteForceMethod.run(points, L, W, M, M, rc, periodicLimit);
+        final Map<Particle, Collection<Particle>> processedPoints = bruteForceMethod.run(points);
 
         final Map<Particle, Collection<Particle>> expectedProcessedPoints = new HashMap<>();
 

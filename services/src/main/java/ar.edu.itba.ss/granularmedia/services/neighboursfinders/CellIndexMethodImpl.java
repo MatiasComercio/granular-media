@@ -8,6 +8,18 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ * For each particle, this implementation gets the ones that are colliding with other particles
+ * of the collection, considering that a collision is produced when two particles are at distance lower or equal than rc,
+ * considering both point's radios.
+ * <p>
+ * In this implementation, particles are supposed to be contained on a rectangle of
+ * height L and width W ( 0 <= point.x < W && 0 <= point.y < L ).
+ * <p>
+ * The class will divide that rectangle in M1xM2 cells - each of them with height L/M1 and base W/M2 -,
+ * and will use this cells to apply the algorithm.
+ *
+ */
 public class CellIndexMethodImpl implements NeighboursFinder {
   private static final Logger LOGGER = LoggerFactory.getLogger(CellIndexMethodImpl.class);
   /**
@@ -29,37 +41,79 @@ public class CellIndexMethodImpl implements NeighboursFinder {
   private static final int ROW = 0;
   private static final int COL = 1;
 
+  private final double length;
+  private final double width;
+  private final int m1;
+  private final int m2;
+  private final double rc;
+  private final boolean periodicLimit;
+  private final CellMatrix cellMatrix;
+  private final Map<Particle, Cell> currentCell;
 
-  @Override
-  public Map<Particle, Collection<Particle>> run(final Collection<Particle> particles,
-                                                 final double L, final double W,
-                                                 final int M1, final int M2,
-                                                 final double rc, final boolean periodicLimit) {
+  /**
+   *
+   * @param length length of the height of the rectangle containing all the particles of the set. Must be positive.
+   * @param width length of the base of the rectangle containing all the particles of the set. Must be positive.
+   * @param m1 number of cells on which the height of the square will be divided. Must be positive.
+   * @param m2 number of cells on which the base of the square will be divided. Must be positive.
+   * @param rc max distance to consider that two particles are colliding. Must be non negative.
+   * @param periodicLimit if the end of a limit cell should be consider as it were from the opposite side
+   *
+   * @throws IllegalArgumentException if M1 <= 0 or M2 <= 0 or rc < 0 or L <= 0 or W <= 0
+   * @implNote take into consideration that this algorithm for work requires that
+   * the condition L/M1 > rc + r1 + r2 and W/M2 > rc + r1 + r2  and  is met for every pair of particles.
+   * However, this condition is not check,
+   * so be sure that it is met so as to guaranty that the value returned by this method is valid and real
+   */
+  public CellIndexMethodImpl(final double length, final double width,
+                             final int m1, final int m2,
+                             final double rc, final boolean periodicLimit) {
     // check M conditions
 
-    if (M1 <= 0 || M2<=0 || rc < 0 || L <= 0 || W<=0) {
-      throw new IllegalArgumentException("Check that this is happening, but must not: M1 <= 0 or M2<= 0 or rc < 0 or L <= 0 or W<=0");
+    if (m1 <= 0 || m2<=0 || rc < 0 || length <= 0 || width <= 0) {
+      throw new IllegalArgumentException("Check that this is happening, but must not: " +
+              "M1 <= 0 or M2<= 0 or rc < 0 or L <= 0 or W <= 0");
     }
 
-    // create the cell matrix (Size: M1 x M2)
-    final CellMatrix cellMatrix = new CellMatrix(M1, M2);
+    this.length = length;
+    this.width = width;
+    this.m1 = m1;
+    this.m2 = m2;
+    this.rc = rc;
+    this.periodicLimit = periodicLimit;
 
+    // create the cell matrix (Size: m1 x m2)
+    this.cellMatrix = new CellMatrix(m1, m2);
+
+    this.currentCell = new HashMap<>();
+  }
+
+  @Override
+  public void avoid(final Particle particle) {
+    final Cell cell = currentCell.remove(particle);
+    if (cell != null) {
+      cellMatrix.removeFromCell(cell.row, cell.col, particle);
+    }
+  }
+
+  @Override
+  public Map<Particle, Collection<Particle>> run(final Collection<Particle> particles) {
     final Map<Particle, Collection<Particle>> collisionPerParticle = new HashMap<>(particles.size());
     final Set<Cell> nonEmptyCells = new HashSet<>();
 
-    for (Particle point : particles) {
-      // add the point to the map to be returned, with a new empty set
-      collisionPerParticle.put(point, new HashSet<>());
+    for (final Particle particle : particles) {
+      // add the particle to the map to be returned, with a new empty set
+      collisionPerParticle.put(particle, new HashSet<>());
 
-      // put each point on the corresponding cell of the cell's matrix
+      // put each particle on the corresponding cell of the cell's matrix
       // save the cell as a non empty one, to analyse it later
-      nonEmptyCells.add(saveToMatrix(L, W, M1, M2, point, cellMatrix));
+      nonEmptyCells.add(saveToMatrix(length, width, m1, m2, particle, cellMatrix));
     }
 
     // run the cell index method itself
-    run(L, W, nonEmptyCells, cellMatrix, rc, periodicLimit, collisionPerParticle);
+    run(length, width, nonEmptyCells, cellMatrix, rc, periodicLimit, collisionPerParticle);
 
-    // return the created map with each point information
+    // return the created map with each particle information
     return collisionPerParticle;
   }
 
@@ -275,7 +329,21 @@ public class CellIndexMethodImpl implements NeighboursFinder {
     row = (M1 - 1) - getT(k1, point.y());
     col = getT(k2, point.x());
 
-    return cellMatrix.addToCell(row, col, point);
+    final Cell pCell = currentCell.get(point);
+    if (pCell != null) {
+      final int pRow = pCell.row;
+      final int pCol = pCell.col;
+
+      if (pRow == row && pCol == col) { // did not changed of cell
+        return cellMatrix.get(row, col);
+      }
+
+      cellMatrix.removeFromCell(pRow, pCol, point);
+    }
+
+    final Cell cCell = cellMatrix.addToCell(row, col, point);
+    currentCell.put(point, cCell);
+    return cCell;
   }
 
   /**
@@ -370,6 +438,9 @@ public class CellIndexMethodImpl implements NeighboursFinder {
     }
     private int cols() { return cols; }
 
+    /* package-private */ void removeFromCell(final int pRow, final int pCol, final Particle point) {
+      get(pRow, pCol).particles.remove(point);
+    }
   }
 }
 

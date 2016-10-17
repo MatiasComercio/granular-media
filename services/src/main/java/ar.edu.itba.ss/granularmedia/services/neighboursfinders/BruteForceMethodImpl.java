@@ -8,9 +8,16 @@ import java.util.*;
 
 public class BruteForceMethodImpl implements NeighboursFinder {
 
+  private final boolean periodicLimit;
+  private final double rc;
+
+  public BruteForceMethodImpl(final boolean periodicLimit, final double rc) {
+    this.periodicLimit = periodicLimit;
+    this.rc = rc;
+  }
+
   @Override
-  public Map<Particle, Collection<Particle>> run(Collection<Particle> particles,
-                                                 double L, double W, int M1, int M2, double rc, boolean periodicLimit) {
+  public Map<Particle, Collection<Particle>> run(Collection<Particle> particles) {
 
     final List<Particle> pointsAsList = new ArrayList<>(particles);
     final Map<Particle, Collection<Particle>> collisionPerParticle = new HashMap<>(particles.size());

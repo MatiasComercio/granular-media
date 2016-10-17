@@ -67,9 +67,7 @@ public class GearGranularMediaSystem
 
     private final double kn;
     private final double kt;
-    private final double totalSystemLength;
-    private final double length;
-    private final double width;
+
     private final double respawnMinX;
     private final double respawnMaxX;
     private final double respawnMinY;
@@ -89,23 +87,23 @@ public class GearGranularMediaSystem
       super(particles);
       this.kn = staticData.kn();
       this.kt = staticData.kt();
-      this.totalSystemLength = staticData.totalSystemLength();
-      this.length = staticData.length();
-      this.width = staticData.width();
+
       this.walls = Collections.unmodifiableCollection(walls);
-      this.neighboursFinder = new CellIndexMethodImpl();
-//      this.neighboursFinder = new BruteForceMethodImpl(); // +++xdebug
+//      this.neighboursFinder = new BruteForceMethodImpl(PERIODIC_LIMIT, RC); // +++xdebug
       this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
       this.respawnQueue = new LinkedList<>();
+
+      final double totalSystemLength = staticData.totalSystemLength();
+      final double width = staticData.width();
 
       this.respawnMinX = ZERO;
       this.respawnMaxX = respawnMinX + width;
 
-      this.respawnMinY = staticData.fallLength() + length;
+      this.respawnMinY = staticData.fallLength() + staticData.length();
       this.respawnMaxY = respawnMinY + staticData.respawnLength();
 
       final double maxRadius = initAndGetMaxRadio();
-      final double condition1 = length / (RC + 2 * maxRadius); // M1 condition for cell index
+      final double condition1 = totalSystemLength / (RC + 2 * maxRadius); // M1 condition for cell index
       final double condition2 = width / (RC + 2 * maxRadius); // M2 condition for cell index
 
       if (condition1 == Math.floor(condition1)) { // In case condition1 is an "integer" value
@@ -118,6 +116,8 @@ public class GearGranularMediaSystem
       } else {
         this.M2 = (int) Math.floor(condition2);
       }
+
+      this.neighboursFinder = new CellIndexMethodImpl(totalSystemLength, width, M1, M2, RC, PERIODIC_LIMIT);
     }
 
     public Collection<Wall> walls() {
@@ -152,8 +152,7 @@ public class GearGranularMediaSystem
       Particle.setMaxPressure(0);
 
       // calculate neighbours with the system's particles updated with the predicted values
-      this.currentNeighbours
-              = neighboursFinder.run(predictedParticles(), totalSystemLength, width, M1, M2, RC, PERIODIC_LIMIT);
+      this.currentNeighbours = neighboursFinder.run(predictedParticles());
       super.preEvaluate();
     }
 
@@ -169,6 +168,7 @@ public class GearGranularMediaSystem
     private void removeIfOut(final Particle particle) {
       if(particle.y() < ZERO){
         respawnQueue.add(particle);
+        neighboursFinder.avoid(particle);
         removeWhenFinish(particle);
       }
     }

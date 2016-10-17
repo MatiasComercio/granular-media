@@ -4,17 +4,23 @@ import ar.edu.itba.ss.granularmedia.interfaces.NeighboursFinder;
 import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.services.neighboursfinders.CellIndexMethodImpl;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
 
 public class CellIndexMethodImplTest {
 
-  private final NeighboursFinder cellIndexMethod;
+  private final NeighboursFinder nonPeriodicCellIndexMethod;
+  private final NeighboursFinder periodicCellIndexMethod;
 
   public CellIndexMethodImplTest() {
-    cellIndexMethod = new CellIndexMethodImpl();
+    final double L = 6d;
+    final double W = 6d;
+    final int M1 = 2;
+    final int M2 = 2;
+    final double rc = 1.5;
+    nonPeriodicCellIndexMethod = new CellIndexMethodImpl(L, W, M1, M2, rc, false);
+    periodicCellIndexMethod = new CellIndexMethodImpl(L, W, M1, M2, rc, true);
   }
 
   @Test
@@ -34,14 +40,7 @@ public class CellIndexMethodImplTest {
     points.add(p4);
     points.add(p5);
 
-    final double L = 6d;
-    final double W = 6d;
-    final int M1 = 2;
-    final int M2 = 2;
-    final double rc = 1.5;
-    final boolean periodicLimit = false;
-
-    final Map<Particle, Collection<Particle>> processedPoints = cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
+    final Map<Particle, Collection<Particle>> processedPoints = nonPeriodicCellIndexMethod.run(points);
 
     final Map<Particle, Set<Particle>> expectedProcessedPoints = new HashMap<>();
 
@@ -94,14 +93,7 @@ public class CellIndexMethodImplTest {
     points.add(p4);
     points.add(p5);
 
-    final double L = 6d;
-    final double W = 6d;
-    final int M1 = 2;
-    final int M2 = 2;
-    final double rc = 1.5;
-    final boolean periodicLimit = true;
-
-    final Map<Particle, Collection<Particle>> processedPoints = cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
+    final Map<Particle, Collection<Particle>> processedPoints = periodicCellIndexMethod.run(points);
 
     final Map<Particle, Collection<Particle>> expectedProcessedPoints = new HashMap<>();
 
@@ -148,14 +140,8 @@ public class CellIndexMethodImplTest {
     final Set<Particle> points = new HashSet<>();
     final Particle p1 = Particle.builder(6, 6).radio(r).build(); // this point should fail when run is called  (out of bounds)
     points.add(p1);
-    final double L = 6d;
-    final double W = 6d;
-    final int M1 = 2;
-    final int M2 = 2;
-    final double rc = 1.5;
-    final boolean periodicLimit = true;
 
-    cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
+    periodicCellIndexMethod.run(points);
   }
 
   @Test(expected=IndexOutOfBoundsException.class)
@@ -164,14 +150,8 @@ public class CellIndexMethodImplTest {
     final Set<Particle> points = new HashSet<>();
     final Particle p1 = Particle.builder(-0.5, 5).radio(r).build(); // this point should fail when run is called  (out of bounds)
     points.add(p1);
-    final double L = 6d;
-    final double W = 6d;
-    final int M1 = 2;
-    final int M2 = 2;
-    final double rc = 1.5;
-    final boolean periodicLimit = true;
 
-    cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
+    periodicCellIndexMethod.run(points);
   }
 
   @Test
@@ -197,16 +177,9 @@ public class CellIndexMethodImplTest {
     points.add(p7);
     points.add(p8);
 
-    final double L = 6d;
-    final double W = 6d;
-    final int M1 = 2;
-    final int M2 = 2;
-    final double rc = 1.5;
-    final boolean periodicLimit = true;
-
     Map<Particle, Collection<Particle>> processedPoints;
 
-    processedPoints = cellIndexMethod.run(points, L, W, M1, M2, rc, periodicLimit);
+    processedPoints = periodicCellIndexMethod.run(points);
 
     final Map<Particle, Set<Particle>> expectedProcessedPoints = new HashMap<>();
 
