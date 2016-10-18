@@ -126,14 +126,14 @@ public abstract class WallAbs {
 
   @Value.Derived
   public Particle start() {
-    final Particle.Builder builder = Particle.builder(xFrom(), yFrom());
+    final Particle.Builder builder = Particle.builder(xFrom(), yFrom()).mass(Double.MAX_VALUE);
     chooseType(builder);
     return builder.build();
   }
 
   @Value.Derived
   public Particle end() {
-    final Particle.Builder builder = Particle.builder(xTo(), yTo());
+    final Particle.Builder builder = Particle.builder(xTo(), yTo()).mass(Double.MAX_VALUE);
     chooseType(builder);
     return builder.build();
   }

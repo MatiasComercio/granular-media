@@ -8,6 +8,7 @@ import ar.edu.itba.ss.granularmedia.interfaces.TimeDrivenSimulationSystem;
 import ar.edu.itba.ss.granularmedia.models.Particle;
 import ar.edu.itba.ss.granularmedia.models.StaticData;
 import ar.edu.itba.ss.granularmedia.models.Wall;
+import ar.edu.itba.ss.granularmedia.models.WallType;
 import ar.edu.itba.ss.granularmedia.services.IOService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.BAD_N_ARGUMENTS;
 import static ar.edu.itba.ss.granularmedia.services.IOService.ExitStatus.COULD_NOT_OPEN_OUTPUT_FILE;
@@ -58,6 +60,10 @@ public class GranularMediaSystemProgram implements MainProgram {
     // system's walls
     final Collection<Wall> systemWalls = initializeSystemWalls(staticData);
 
+    // add opening extremes that are inside the system as particles with
+    // infinite mass so as to improve collisions
+    systemParticles.addAll(getOpeningWallsParticles(systemWalls));
+
     final TimeDrivenSimulationSystem<Gear5GranularMediaSystemData> granularMediaSystem =
             new GearGranularMediaSystem(systemParticles, systemWalls, staticData);
 
@@ -78,6 +84,20 @@ public class GranularMediaSystemProgram implements MainProgram {
   }
 
   // private
+  private Collection<Particle> getOpeningWallsParticles(final Collection<Wall> walls) {
+    final Collection<Particle> openingParticles = new HashSet<>();
+
+    for (final Wall wall : walls) {
+      if (wall.type() == WallType.HORIZONTAL_LEFT) {
+        openingParticles.add(wall.end());
+      } else if (wall.type() == WallType.HORIZONTAL_RIGHT) {
+        openingParticles.add(wall.start());
+      }
+    }
+
+    return openingParticles;
+  }
+
   private StaticData loadStaticData(final String[] args) {
     final StaticData staticData = InputSerializerHelper.loadStaticFile(args[I_STATIC_DATA]);
     final double simulationTime = IOService.parseAsDouble(args[I_SIMULATION_TIME], "<simulation_time>");
