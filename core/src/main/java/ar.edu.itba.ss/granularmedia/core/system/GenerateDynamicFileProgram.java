@@ -45,21 +45,12 @@ public class GenerateDynamicFileProgram implements MainProgram {
     final Collection<Particle> particles = initializeSystemParticles(staticData);
 
     final String serializedStaticData = OutputSerializerHelper.dynamicOutput(particles);
-    final Path pathToStaticFile = createDynamic(DEFAULT_OUTPUT_FOLDER, DEFAULT_DYNAMIC_FILE_NAME);
+    final Path pathToStaticFile =
+            IOService.createOutputFile(DEFAULT_OUTPUT_FOLDER, DEFAULT_DYNAMIC_FILE_NAME, DEFAULT_DAT_FILE_EXTENSION);
     IOService.openOutputFile(pathToStaticFile, true);
     IOService.appendToFile(pathToStaticFile, serializedStaticData);
     IOService.closeOutputFile(pathToStaticFile);
     System.out.println("[DONE]");
-  }
-
-  private Path createDynamic(final String defaultOutputFolder, final String defaultStaticFileName) {
-    final String staticFile = defaultStaticFileName + DEFAULT_DAT_FILE_EXTENSION;
-    final Path pathToStaticFile = IOService.createFile(defaultOutputFolder, staticFile);
-    if (!IOService.openOutputFile(pathToStaticFile, true)) {
-      IOService.exit(COULD_NOT_OPEN_OUTPUT_FILE, pathToStaticFile);
-    }
-    // only reach here if could open file
-    return pathToStaticFile;
   }
 
   private Collection<Particle> initializeSystemParticles(final StaticData staticData) {

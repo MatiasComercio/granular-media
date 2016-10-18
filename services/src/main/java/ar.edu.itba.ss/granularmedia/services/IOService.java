@@ -88,7 +88,34 @@ public class IOService {
     }
   }
 
-  public static Path createFile(final String destFolder, final String file) {
+  /**
+   * Creates the specified {@code fileName.fileExtension} file at the specified {@code fileFolder} destination folder.
+   * <P>
+   * If the destination folder does not exists, it tries to create it.
+   * <P>
+   * If the file exists, it tries to delete it first.
+   * <P>
+   * If anything fails during these operations, program is aborted with a detail log and display message,
+   * and the corresponding exit status code.
+   * @param fileFolder folder to save the new file
+   * @param fileName file's name without extension
+   * @param fileExtension file's extension
+   * @return path of the created output file
+   *
+   */
+  public static Path createOutputFile(final String fileFolder,
+                               final String fileName,
+                               final String fileExtension) {
+    final String file = fileName + fileExtension;
+    final Path pathToFile = IOService.createFile(fileFolder, file);
+    if (!IOService.openOutputFile(pathToFile, true)) {
+      IOService.exit(COULD_NOT_OPEN_OUTPUT_FILE, pathToFile);
+    }
+    // only reach here if could open file
+    return pathToFile;
+  }
+
+  private static Path createFile(final String destFolder, final String file) {
     return createFile(destFolder, file, null);
   }
 
@@ -107,8 +134,7 @@ public class IOService {
    * @param data data to be saved on the new file
    * @return the path to the just created file
    */
-  @SuppressWarnings("WeakerAccess")
-  public static Path createFile(final String destFolder, final String file, final String data) {
+  private static Path createFile(final String destFolder, final String file, final String data) {
     final File dataFolder = new File(destFolder);
     // tries to make directory
     if (Files.notExists(Paths.get(destFolder)) && !dataFolder.mkdirs()) {

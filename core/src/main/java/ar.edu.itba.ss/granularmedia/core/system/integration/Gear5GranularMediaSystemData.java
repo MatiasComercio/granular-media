@@ -1,4 +1,4 @@
-package ar.edu.itba.ss.granularmedia.core.system;
+package ar.edu.itba.ss.granularmedia.core.system.integration;
 
 import ar.edu.itba.ss.granularmedia.interfaces.NeighboursFinder;
 import ar.edu.itba.ss.granularmedia.models.Particle;
@@ -38,6 +38,7 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
   private final RespawnArea respawnArea;
 
   private Map<Particle, Collection<Particle>> currentNeighbours;
+  private double kineticEnergy;
 
   public Gear5GranularMediaSystemData(final Collection<Particle> particles,
                                       final Collection<Wall> walls,
@@ -62,10 +63,14 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
     this.neighboursFinder = new BruteForceMethodImpl(PERIODIC_LIMIT, RC);
   }
 
-  @SuppressWarnings("WeakerAccess")
   public Collection<Wall> walls() {
     return walls;
   }
+
+  public double kineticEnergy() {
+    return kineticEnergy;
+  }
+
 
   @Override
   protected Map<Integer, Vector2D> setInitialDerivativeValues(final Particle particle) {
@@ -90,6 +95,32 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
   }
 
   @Override
+  protected Vector2D getForceWithPredicted(final Particle particle) {
+    particle.normalForce(0); // reset forces for this iteration
+
+    // neighbours are supposed to be correctly updated
+    final Vector2D totalParticlesForce = totalParticlesForce(particle, currentNeighbours.get(particle));
+    final Vector2D totalWallsForce = totalWallsForce(particle);
+    final Vector2D totalGravityForce = Vector2D.builder(0, - particle.mass() * G).build();
+
+    return totalParticlesForce.add(totalWallsForce).add(totalGravityForce);
+  }
+
+  @Override
+  protected void prePredict() {
+    kineticEnergy = 0;
+  }
+
+  @Override
+  protected void predicted(final Particle predictedParticle) {
+    // it is assumed that if the predicted particle.y() is < ZERO => the particle will be out soon =>
+    // => we remove that particle before evaluation for simplification on neighbours finder method usage
+    removeIfOut(predictedParticle);
+
+    super.predicted(predictedParticle);
+  }
+
+  @Override
   protected void preEvaluate() {
     // reset maxPressure
     Particle.setMaxPressure(0);
@@ -100,24 +131,10 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
   }
 
   @Override
-  public void predicted(final Particle predictedParticle) {
-    // it is assumed that if the predicted particle.y() is < ZERO => the particle will be out soon =>
-    // => we remove that particle before evaluation for simplification on neighbours finder method usage
-    removeIfOut(predictedParticle);
-
-    super.predicted(predictedParticle);
-  }
-
-  private void removeIfOut(final Particle particle) {
-    if(particle.y() < ZERO){
-      respawnQueue.add(particle);
-      removeWhenFinish(particle);
-    }
-  }
-
-  @Override
   public void fixed(final Particle particle) {
-    removeIfOut(particle);
+    if (!removeIfOut(particle)) {
+      kineticEnergy += particle.kineticEnergy();
+    }
     respawnArea.update(particle);
 
     super.fixed(particle);
@@ -138,22 +155,24 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
     }
   }
 
+  /**
+   *
+   * @param particle -
+   * @return true if removed; false otherwise
+   */
+  private boolean removeIfOut(final Particle particle) {
+    if(particle.y() < ZERO){
+      respawnQueue.add(particle);
+      removeWhenFinish(particle);
+      return true;
+    }
+    return false;
+  }
+
   private void spawnParticle(final Particle particle) {
     this.particles().add(particle);
     this.predictedRs().put(particle, new HashMap<>(sVectors()));
     this.currentRs().put(particle, setInitialDerivativeValues(particle));
-  }
-
-  @Override
-  protected Vector2D getForceWithPredicted(final Particle particle) {
-    particle.normalForce(0); // reset forces for this iteration
-
-    // neighbours are supposed to be correctly updated
-    final Vector2D totalParticlesForce = totalParticlesForce(particle, currentNeighbours.get(particle));
-    final Vector2D totalWallsForce = totalWallsForce(particle);
-    final Vector2D totalGravityForce = Vector2D.builder(0, - particle.mass() * G).build();
-
-    return totalParticlesForce.add(totalWallsForce).add(totalGravityForce);
   }
 
   private double initAndGetMaxRadio() {

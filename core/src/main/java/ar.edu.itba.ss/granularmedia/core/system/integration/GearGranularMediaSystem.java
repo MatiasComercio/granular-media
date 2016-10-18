@@ -1,6 +1,5 @@
 package ar.edu.itba.ss.granularmedia.core.system.integration;
 
-import ar.edu.itba.ss.granularmedia.core.system.Gear5GranularMediaSystemData;
 import ar.edu.itba.ss.granularmedia.interfaces.NumericIntegrationMethod;
 import ar.edu.itba.ss.granularmedia.interfaces.TimeDrivenSimulationSystem;
 import ar.edu.itba.ss.granularmedia.models.Particle;
