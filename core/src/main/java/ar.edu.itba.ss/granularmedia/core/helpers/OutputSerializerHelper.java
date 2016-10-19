@@ -189,8 +189,14 @@ public class OutputSerializerHelper {
       case COMMON:
         // red increasing with pressure
         // blue decreasing with pressure
-        final double pressure = particle.pressure() / Particle.getMaxPressure();
-        color[R] = pressure ;
+        final double maxPressure = Particle.getMaxPressure();
+        final double pressure;
+        if (Double.valueOf(maxPressure).equals(ZERO)) {
+          pressure = particle.pressure();
+        } else {
+          pressure = particle.pressure() / Particle.getMaxPressure();
+        }
+        color[R] = pressure;
         color[B] = 1 - color[R];
         color[G] = 0;
         break;
