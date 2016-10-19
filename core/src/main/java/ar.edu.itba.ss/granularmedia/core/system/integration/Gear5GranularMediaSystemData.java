@@ -36,13 +36,16 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
   private final NeighboursFinder neighboursFinder;
   private final Deque<Particle> respawnQueue;
   private final RespawnArea respawnArea;
+  private final double fallLength;
 
   private Map<Particle, Collection<Particle>> currentNeighbours;
   private double kineticEnergy;
+  private long nParticlesFlowed;
+  private long nParticlesJustFlowed;
 
-  public Gear5GranularMediaSystemData(final Collection<Particle> particles,
-                                      final Collection<Wall> walls,
-                                      final StaticData staticData) {
+  /* package-private */ Gear5GranularMediaSystemData(final Collection<Particle> particles,
+                               final Collection<Wall> walls,
+                               final StaticData staticData) {
     super(particles);
     this.kn = staticData.kn();
     this.kt = staticData.kt();
@@ -50,6 +53,7 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
     this.walls = Collections.unmodifiableCollection(walls);
     this.currentNeighbours = new HashMap<>(); // initialize so as not to be null
     this.respawnQueue = new LinkedList<>();
+    this.fallLength = staticData.fallLength();
 
     final double width = staticData.width();
 
@@ -108,7 +112,14 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
 
   @Override
   protected void prePredict() {
+    // reset kinetic energy
     kineticEnergy = 0;
+
+    // reset maxPressure
+    Particle.setMaxPressure(0);
+
+    // reset nParticlesJustFlowed
+    nParticlesJustFlowed = 0;
   }
 
   @Override
@@ -122,16 +133,25 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
 
   @Override
   protected void preEvaluate() {
-    // reset maxPressure
-    Particle.setMaxPressure(0);
-
     // calculate neighbours with the system's particles updated with the predicted values
     this.currentNeighbours = neighboursFinder.run(predictedParticles());
     super.preEvaluate();
   }
 
+  public long nParticlesFlowed() {
+    return nParticlesFlowed;
+  }
+
+  public long nParticlesJustFlowed() {
+    return nParticlesJustFlowed;
+  }
+
   @Override
   public void fixed(final Particle particle) {
+    if (flowedOut(particle)) {
+      nParticlesJustFlowed ++;
+      nParticlesFlowed ++;
+    }
     if (!removeIfOut(particle)) {
       kineticEnergy += particle.kineticEnergy();
     }
@@ -164,6 +184,15 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
     if(particle.y() < ZERO){
       respawnQueue.add(particle);
       removeWhenFinish(particle);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean flowedOut(final Particle particle) {
+    // professor told us to use only the particle's center point, not including its radio
+    if (particle.y() < fallLength && !particle.hasFlowedOut()) {
+      particle.hasFlowedOut(true);
       return true;
     }
     return false;
@@ -336,9 +365,7 @@ public class Gear5GranularMediaSystemData extends Gear5SystemData {
 
     private Particle respawn(final Particle particle) {
       final Cell cell = emptyCells.poll();
-      final Particle respawnedParticle = Particle.builder(cell.x, cell.y).id(particle.id())
-              .radio(particle.radio()).mass(particle.mass()).forceY(-particle.mass() * G).type(particle.type())
-              .build();
+      final Particle respawnedParticle = particle.respawn(cell.x, cell.y, 0, - particle.mass() * G);
 
       final Set<Cell> cells = new HashSet<>();
       cells.add(cell);

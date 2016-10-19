@@ -16,6 +16,16 @@ public abstract class ParticleAbs {
 
   private double normalForce = 0;
 
+  private boolean hasFlowedOut = false;
+
+  public boolean hasFlowedOut() {
+    return hasFlowedOut;
+  }
+
+  public void hasFlowedOut(final boolean hasFlowedOut) {
+    this.hasFlowedOut = hasFlowedOut;
+  }
+
   @Value.Default
   public long id() {
     return idGen ++;
@@ -150,6 +160,12 @@ public abstract class ParticleAbs {
     ParticleAbs.maxPressure = maxPressure;
   }
 
+  public Particle respawn(final double x, final double y, final double forceX, final double forceY) {
+    return Particle.builder(x, y).id(id())
+            .radio(radio()).mass(mass()).forceX(forceX).forceY(forceY).type(type())
+            .build();
+  }
+
   public Particle update(final Vector2DAbs uP, final Vector2DAbs uV, final Vector2DAbs uF) {
     if (pressure() > maxPressure) {
       maxPressure = pressure();
@@ -165,6 +181,7 @@ public abstract class ParticleAbs {
             .radio(radio())
             .build();
     particle.normalForce(normalForce()); // update normal force
+    particle.hasFlowedOut(hasFlowedOut()); // update has flowed out
     return particle;
   }
 

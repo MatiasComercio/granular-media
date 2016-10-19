@@ -12,11 +12,13 @@ import java.util.HashSet;
 import static ar.edu.itba.ss.granularmedia.models.ParticleType.BORDER;
 import static ar.edu.itba.ss.granularmedia.models.ParticleType.SPAWN;
 
+@SuppressWarnings("StringBufferReplaceableByString")
 public class OutputSerializerHelper {
   private static final Logger LOGGER = LoggerFactory.getLogger(OutputSerializerHelper.class);
   private static final double ZERO = 0;
   private static final String NL = System.lineSeparator();
   private static final char SPLITTER = '\t';
+  private static final char CSV_SPLITTER = ',';
   private static final int R = 0;
   private static final int G = 1;
   private static final int B = 2;
@@ -59,7 +61,6 @@ public class OutputSerializerHelper {
   }
 
   public static String staticOutput(final StaticData staticData) {
-    @SuppressWarnings("StringBufferReplaceableByString")
     final StringBuilder sb = new StringBuilder();
     sb      .append(staticData.N()).append(NL)
             .append(staticData.width()).append(NL)
@@ -77,6 +78,16 @@ public class OutputSerializerHelper {
     sb.append(particles.size()).append(NL);
     // system's particles' data
     serializeParticles(particles, sb);
+    return sb.toString();
+  }
+
+  public String flowSerializer(final long step, final double currentTime, final long nParticlesFlowed) {
+    final StringBuilder sb = new StringBuilder();
+    for (long i = 0 ; i < nParticlesFlowed ; i++) {
+      sb
+              .append(step).append(CSV_SPLITTER)
+              .append(currentTime).append(NL);
+    }
     return sb.toString();
   }
 
@@ -118,7 +129,7 @@ public class OutputSerializerHelper {
   }
 
   private static StringBuilder serializeParticles(final Iterable<Particle> particles,
-                                         final StringBuilder sb) {
+                                                  final StringBuilder sb) {
     for (Particle particle : particles) {
       final double[] color = chooseColor(particle);
 
