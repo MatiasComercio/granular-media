@@ -91,6 +91,9 @@ public class IOService {
   /**
    * Creates the specified {@code fileName.fileExtension} file at the specified {@code fileFolder} destination folder.
    * <P>
+   * It also prepares the file for being written.
+   * After using this file, you MUST close the file using the method provided by this service. IF NOT, DATA CAN BE LOST
+   * <P>
    * If the destination folder does not exists, it tries to create it.
    * <P>
    * If the file exists, it tries to delete it first.
@@ -201,7 +204,7 @@ public class IOService {
   }
 
   /**
-   * given {@code pathToFile} file
+   * Closes the given {@code pathToFile} file
    * @param pathToFile path to the output file to be closed
    */
   public static void closeOutputFile(final Path pathToFile) {
@@ -227,6 +230,10 @@ public class IOService {
     }
   }
 
+  /**
+   * Closes the given {@code pathToFile} file
+   * @param pathToFile path to the input file to be closed
+   */
   public static void closeInputFile(final Path pathToFile) {
     final Stream<String> reader = inputFiles.remove(pathToFile);
     try {

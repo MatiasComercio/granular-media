@@ -32,9 +32,11 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final String DEFAULT_OVITO_FILE_NAME = "ovito";
   private static final String STATISTICS_FILE_EXTENSION = ".csv";
   private static final String DEFAULT_KINETIC_ENERGY_FILE_NAME = "kinetic_energy";
+  private static final String DEFAULT_SYSTEM_STOPPED_FILE_NAME = "system_stopped";
 
   private static final double MS_TO_S = 1/1000.0;
   private static final double DELTA_LOG = 0.025;
+  private static final double ERROR_TOLERANCE = 1e-8;
 
   // run args index
   private static final int I_STATIC_DATA = 1;
@@ -46,6 +48,7 @@ public class GranularMediaSystemProgram implements MainProgram {
 
   private final Path pathToOvitoFile;
   private final Path pathToKineticEnergyFile;
+  private final Path pathToSystemStoppedFile;
 
   public GranularMediaSystemProgram() {
     this.pathToOvitoFile =
@@ -53,6 +56,9 @@ public class GranularMediaSystemProgram implements MainProgram {
     this.pathToKineticEnergyFile =
             IOService.createOutputFile(DEFAULT_OUTPUT_FOLDER,
                     DEFAULT_KINETIC_ENERGY_FILE_NAME, STATISTICS_FILE_EXTENSION);
+    this.pathToSystemStoppedFile =
+            IOService.createOutputFile(DEFAULT_OUTPUT_FOLDER,
+                    DEFAULT_SYSTEM_STOPPED_FILE_NAME, STATISTICS_FILE_EXTENSION);
   }
 
   @Override
@@ -108,6 +114,8 @@ public class GranularMediaSystemProgram implements MainProgram {
     long step = 0;
     long logStep = 0;
     double currentTime = 0;
+    boolean considerKineticEnergy = false;
+    double kineticEnergy = 0;
     while (currentTime < simulationTime) {
       // choose output action based on given parameters
       if (currentTime >= (delta2 * step)) {
@@ -116,8 +124,9 @@ public class GranularMediaSystemProgram implements MainProgram {
       }
 
       if (currentTime >= (DELTA_LOG * logStep)) {
-        System.out.printf("\tClock: %s; Current simulation time: %f ; Final simulation time: %f\n",
-                LocalDateTime.now(), currentTime, simulationTime);
+        System.out.printf(
+                "\tClock: %s; Current simulation time: %f ; Final simulation time: %f ; Current Kinetic Energy: %e\n",
+                LocalDateTime.now(), currentTime, simulationTime, granularMediaSystem.getSystemData().kineticEnergy());
         logStep ++;
       }
 
@@ -126,12 +135,30 @@ public class GranularMediaSystemProgram implements MainProgram {
 
       // advance time and count the current step
       currentTime += dt;
+
+      // if no more particles are moving => system's evolution is finished
+      kineticEnergy = granularMediaSystem.getSystemData().kineticEnergy();
+      if (!considerKineticEnergy) { // start considering kinetic energy after it overcomes the default ERROR_TOLERANCE
+        considerKineticEnergy = kineticEnergy > ERROR_TOLERANCE;
+      }
+      if (considerKineticEnergy && kineticEnergy < ERROR_TOLERANCE) {
+        systemStopped(step, currentTime);
+        break;
+      }
     }
 
     final double endTime = System.currentTimeMillis();
     final double simulationDuration = endTime - startTime;
     LOGGER.info("Total simulation time: {} s", simulationDuration * MS_TO_S);
     System.out.printf("Total simulation time: %f s\n", simulationDuration * MS_TO_S);
+  }
+
+  private void systemStopped(final long step, final double currentTime) {
+    System.out.printf("\tSystem has reached the stop condition at time: %fs.%s",
+            currentTime, System.lineSeparator());
+    final String fileMsg = step + ", " + currentTime;
+    IOService.appendToFile(pathToSystemStoppedFile, fileMsg);
+    IOService.closeOutputFile(pathToSystemStoppedFile);
   }
 
   private Collection<Particle> getOpeningWallsParticles(final Collection<Wall> walls) {
