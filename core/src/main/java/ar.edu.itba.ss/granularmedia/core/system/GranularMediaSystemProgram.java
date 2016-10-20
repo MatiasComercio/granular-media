@@ -35,6 +35,8 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final String DEFAULT_SYSTEM_STOPPED_FILE_NAME = "system_stopped";
   private static final String DEFAULT_FLOW_FILE_NAME = "flow";
   private static final String DEFAULT_MEDIA_FLOW_FILE_NAME = "flow_media";
+  private static final String DATA_FILE_EXTENSION = ".dat";
+  private static final String DEFAULT_STATIC_DATA_FILE_NAME = "complete_static";
 
   private static final double MS_TO_S = 1/1000.0;
   private static final double DELTA_LOG = 0.025;
@@ -95,7 +97,7 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double defaultDelta1 = .1 * Math.sqrt(staticData.mass()/staticData.kn());
     final double dt = Math.min(defaultDelta1, staticData.delta1());
     System.out.printf("Chosen dt: %es\n", dt);
-    System.out.println(staticData);
+    outputCompleteStaticData(staticData);
     System.out.println("Real system particles: " + systemParticles.size());
 
     // simulation itself
@@ -169,6 +171,15 @@ public class GranularMediaSystemProgram implements MainProgram {
     IOService.appendToFile(pathToOutputMediaFlowFile, String.valueOf(mediaFlow));
     IOService.closeOutputFile(pathToOutputMediaFlowFile);
     System.out.println("Media Flow: " + mediaFlow);
+  }
+
+  private void outputCompleteStaticData(final StaticData staticData) {
+    final Path pathToStaticData =
+            IOService.createOutputFile(defaultOutputFolder,
+                    DEFAULT_STATIC_DATA_FILE_NAME, DATA_FILE_EXTENSION);
+    IOService.appendToFile(pathToStaticData, staticData.toString());
+    IOService.closeOutputFile(pathToStaticData);
+    System.out.println(staticData);
   }
 
   private void systemStopped(final long step, final double currentTime) {
