@@ -48,7 +48,8 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final int I_SIMULATION_TIME = 3;
   private static final int I_DELTA_1 = 4;
   private static final int I_DELTA_2 = 5;
-  private static final int N_ARGS_EXPECTED = 6;
+  private static final int I_PRINT_OVITO = 6;
+  private static final int N_ARGS_EXPECTED = 7;
 
   private final String defaultOutputFolder = DEFAULT_OUTPUT_FOLDER + '/' + LocalDateTime.now();
   private final Path pathToOvitoFile;
@@ -74,11 +75,11 @@ public class GranularMediaSystemProgram implements MainProgram {
       throw new IllegalStateException();
     }
 
-    final StaticData staticData = loadStaticData(args);
-
     // system's particles
     final Collection<Particle> systemParticles =
             InputSerializerHelper.loadDynamicData(args[I_DYNAMIC_DATA]);
+
+    StaticData staticData = loadStaticData(args).withRealN(systemParticles.size());
 
     // system's walls
     final Collection<Wall> systemWalls = initializeSystemWalls(staticData);
@@ -96,13 +97,12 @@ public class GranularMediaSystemProgram implements MainProgram {
     // default delta time
     final double defaultDelta1 = .1 * Math.sqrt(staticData.mass()/staticData.kn());
     final double dt = Math.min(defaultDelta1, staticData.delta1());
-    System.out.printf("Chosen dt: %es\n", dt);
+    staticData = staticData.withDelta1(dt);
     outputCompleteStaticData(staticData);
-    System.out.println("Real system particles: " + systemParticles.size());
 
     // simulation itself
     System.out.println("Running simulation...");
-    startSimulation(granularMediaSystem, dt, staticData.simulationTime(), staticData.delta2(), outputSerializerHelper);
+    startSimulation(granularMediaSystem, staticData, outputSerializerHelper);
     System.out.println("[DONE]");
 
     // close resources
@@ -113,9 +113,12 @@ public class GranularMediaSystemProgram implements MainProgram {
 
   // private
   private void startSimulation(final TimeDrivenSimulationSystem<Gear5GranularMediaSystemData> granularMediaSystem,
-                               final double dt, final double simulationTime, final double delta2,
+                               final StaticData staticData,
                                final OutputSerializerHelper outputSerializerHelper) {
     final double startTime = System.currentTimeMillis();
+    final double dt = staticData.delta1();
+    final double simulationTime = staticData.simulationTime();
+    final double delta2 = staticData.delta2();
 
     long step = 0;
     long logStep = 0;
@@ -125,7 +128,8 @@ public class GranularMediaSystemProgram implements MainProgram {
     while (currentTime < simulationTime) {
       // choose output action based on given parameters
       if (currentTime >= (delta2 * step)) {
-        outputSystem(granularMediaSystem.getSystemData(), step, currentTime, outputSerializerHelper);
+        // print system after printStepGap dt units
+        outputSystem(granularMediaSystem.getSystemData(), step, currentTime, staticData, outputSerializerHelper);
         step ++;
       }
 
@@ -212,15 +216,18 @@ public class GranularMediaSystemProgram implements MainProgram {
     final double simulationTime = IOService.parseAsDouble(args[I_SIMULATION_TIME], "<simulation_time>");
     final double delta1 = IOService.parseAsDouble(args[I_DELTA_1], "<delta_1>");
     final double delta2 = IOService.parseAsDouble(args[I_DELTA_2], "<delta_2>");
+    final boolean printOvito = IOService.parseAsBoolean(args[I_PRINT_OVITO], "<print_ovito>");
 
-    return staticData.withSimulationTime(simulationTime).withDelta1(delta1).withDelta2(delta2);
+    return staticData
+            .withSimulationTime(simulationTime).withDelta1(delta1).withDelta2(delta2).withPrintOvito(printOvito);
   }
 
   private void outputSystem(final Gear5GranularMediaSystemData systemData,
-                            final long step, final double currentTime,
+                            final long step, final double currentTime, final StaticData staticData,
                             final OutputSerializerHelper outputSerializerHelper) {
-    // print system after printStepGap dt units
-    appendToOvito(pathToOvitoFile, systemData.particles(), systemData.walls(), step, outputSerializerHelper);
+    if (staticData.printOvito()) {
+      appendToOvito(pathToOvitoFile, systemData.particles(), systemData.walls(), step, outputSerializerHelper);
+    }
     appendToKineticEnergy(pathToKineticEnergyFile, systemData.kineticEnergy(), step, currentTime);
   }
 

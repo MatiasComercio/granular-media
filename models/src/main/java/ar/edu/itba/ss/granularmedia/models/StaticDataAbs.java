@@ -31,6 +31,11 @@ public abstract class StaticDataAbs {
   @Builder.Parameter
   public abstract int N();
 
+  @Value.Default
+  public int realN() {
+    return N();
+  }
+
   @Builder.Parameter
   public abstract double width();
 
@@ -97,5 +102,10 @@ public abstract class StaticDataAbs {
   @Value.Derived
   public double totalSystemLength() {
     return fallLength() + length() + respawnLength();
+  }
+
+  @Value.Default
+  public boolean printOvito() {
+    return false;
   }
 }

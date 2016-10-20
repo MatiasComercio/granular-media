@@ -277,6 +277,23 @@ public class IOService {
     }
   }
 
+  /**
+   * Parses as boolean the given string.
+   * Exits if an error is encountered
+   * @param s string to be parsed
+   * @param varErrMsg variable name to be displayed if an error raise
+   * @return the parsed boolean
+   */
+  public static boolean parseAsBoolean(final String s, final String varErrMsg) {
+    try {
+      return Boolean.parseBoolean(s);
+    } catch (NumberFormatException e) {
+      exit(NUMBER_EXPECTED, new Object[] { varErrMsg, e });
+      return false; // should never reach here
+    }
+  }
+
+
   public static Stream<String> readLines(final Path filePath) {
     return inputFiles.get(filePath);
   }
