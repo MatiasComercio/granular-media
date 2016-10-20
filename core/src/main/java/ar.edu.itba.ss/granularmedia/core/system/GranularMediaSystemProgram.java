@@ -48,18 +48,19 @@ public class GranularMediaSystemProgram implements MainProgram {
   private static final int I_DELTA_2 = 5;
   private static final int N_ARGS_EXPECTED = 6;
 
+  private final String defaultOutputFolder = DEFAULT_OUTPUT_FOLDER + '/' + LocalDateTime.now();
   private final Path pathToOvitoFile;
   private final Path pathToKineticEnergyFile;
   private final Path pathToFlowFile;
 
   public GranularMediaSystemProgram() {
     this.pathToOvitoFile =
-            IOService.createOutputFile(DEFAULT_OUTPUT_FOLDER, DEFAULT_OVITO_FILE_NAME, OVITO_FILE_EXTENSION);
+            IOService.createOutputFile(defaultOutputFolder, DEFAULT_OVITO_FILE_NAME, OVITO_FILE_EXTENSION);
     this.pathToKineticEnergyFile =
-            IOService.createOutputFile(DEFAULT_OUTPUT_FOLDER,
+            IOService.createOutputFile(defaultOutputFolder,
                     DEFAULT_KINETIC_ENERGY_FILE_NAME, STATISTICS_FILE_EXTENSION);
     this.pathToFlowFile =
-            IOService.createOutputFile(DEFAULT_OUTPUT_FOLDER,
+            IOService.createOutputFile(defaultOutputFolder,
                     DEFAULT_FLOW_FILE_NAME, STATISTICS_FILE_EXTENSION);
   }
 
@@ -164,7 +165,7 @@ public class GranularMediaSystemProgram implements MainProgram {
 
   private void outputMediaFlow(final double mediaFlow) {
     final Path pathToOutputMediaFlowFile =
-            IOService.createOutputFile(DEFAULT_OUTPUT_FOLDER, DEFAULT_MEDIA_FLOW_FILE_NAME, STATISTICS_FILE_EXTENSION);
+            IOService.createOutputFile(defaultOutputFolder, DEFAULT_MEDIA_FLOW_FILE_NAME, STATISTICS_FILE_EXTENSION);
     IOService.appendToFile(pathToOutputMediaFlowFile, String.valueOf(mediaFlow));
     IOService.closeOutputFile(pathToOutputMediaFlowFile);
     System.out.println("Media Flow: " + mediaFlow);
@@ -174,7 +175,7 @@ public class GranularMediaSystemProgram implements MainProgram {
     System.out.printf("\tSystem has reached the stop condition at time: %fs.%s",
             currentTime, System.lineSeparator());
     final Path pathToSystemStoppedFile =
-            IOService.createOutputFile(DEFAULT_OUTPUT_FOLDER,
+            IOService.createOutputFile(defaultOutputFolder,
                     DEFAULT_SYSTEM_STOPPED_FILE_NAME, STATISTICS_FILE_EXTENSION);
     final String fileMsg = step + ", " + currentTime;
     IOService.appendToFile(pathToSystemStoppedFile, fileMsg);
