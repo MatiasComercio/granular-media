@@ -40,7 +40,7 @@ public class GranularMediaSystemProgram implements MainProgram {
 
   private static final double MS_TO_S = 1/1000.0;
   private static final double DELTA_LOG = 0.025;
-  private static final double ERROR_TOLERANCE = 1e-8;
+  private static final double ERROR_TOLERANCE = 7e-7;
 
   // run args index
   private static final int I_STATIC_DATA = 1;
